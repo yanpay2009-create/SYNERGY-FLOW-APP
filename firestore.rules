@@ -1,0 +1,231 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (
+          (request.auth.uid == "ugTOls4K6EgKG13hBiAXHaYC2bj2") || // Bootstrap Admin UID 1
+          (request.auth.uid == "mqZUUW73sCYe1bJTowBqF1HI2O02") || // Bootstrap Admin UID 2
+          (request.auth.token.email != null && request.auth.token.email.lower() == "yanpay2009@gmail.com") ||
+          (request.auth.token.email != null && request.auth.token.email.lower() == "synergyflow.my@gmail.com") ||
+          (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', 'user') == 'admin')
+        );
+    }
+
+    function isValidEmail(email) {
+      return email is string && (email == "" || email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"));
+    }
+
+    function isValidUrl(url) {
+      return url is string && (url == "" || url.matches("^https://.*") || url.matches("^http://.*"));
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function uidUnchanged() {
+      return !('uid' in request.resource.data) || request.resource.data.get('uid', '') == request.auth.uid;
+    }
+
+    function uidNotModified(userId) {
+      return !('uid' in request.resource.data) || request.resource.data.uid == resource.data.get('uid', userId);
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidUser(data) {
+      return data.get('name', '') is string &&
+             data.get('email', '') is string &&
+             data.get('tier', 'Starter') is string &&
+             data.get('accumulatedSales', 0) is number &&
+             data.get('walletBalance', 0) is number &&
+             data.get('teamSize', 0) is number &&
+             data.get('accumulatedIncome', 0) is number &&
+             data.get('referralCode', '') is string &&
+             (!('uid' in data) || data.get('uid', '') is string) &&
+             (!('role' in data) || data.get('role', 'user') in ['admin', 'user']) &&
+             (!('kycStatus' in data) || data.get('kycStatus', 'Unverified') in ['Unverified', 'Pending', 'Verified', 'Rejected']) &&
+             (!('avatar' in data) || data.get('avatar', '') is string) &&
+             (!('phone' in data) || data.get('phone', '') is string) &&
+             (!('lineId' in data) || data.get('lineId', '') is string) &&
+             (!('favorites' in data) || data.get('favorites', []) is list);
+    }
+
+    function isValidProduct(data) {
+      return hasRequiredFields(['name', 'price', 'category', 'sold', 'stock']) &&
+             data.get('name', '') is string && data.get('name', '').size() > 0 && data.get('name', '').size() < 200 &&
+             data.get('price', 0) is number && data.get('price', 0) >= 0 &&
+             data.get('category', '') is string && data.get('category', '').size() < 50 &&
+             data.get('sold', 0) is number && data.get('sold', 0) >= 0 &&
+             data.get('stock', 0) is number && data.get('stock', 0) >= 0 &&
+             (!('image' in data) || isValidUrl(data.get('image', ''))) &&
+             (!('description' in data) || (data.get('description', '') is string && data.get('description', '').size() < 5000));
+    }
+
+    function isValidOrder(data) {
+      return hasRequiredFields(['userId', 'date', 'items', 'total', 'status', 'shippingAddress']) &&
+             data.get('userId', '') == request.auth.uid &&
+             data.get('status', '') in ['Pending', 'To Ship', 'Shipped', 'Delivered', 'Cancelled', 'Return Pending', 'Returned'] &&
+             data.get('total', 0) is number && data.get('total', 0) >= 0 &&
+             data.get('items', []) is list && data.get('items', []).size() > 0 && data.get('items', []).size() <= 50;
+    }
+
+    function isValidFeedItem(data) {
+      return hasRequiredFields(['type', 'category', 'user', 'userId', 'content', 'caption', 'status', 'likes', 'shares', 'isAi']) &&
+             data.get('userId', '') == request.auth.uid &&
+             data.get('type', '') in ['image', 'video'] &&
+             data.get('status', '') in ['Approved', 'Pending'] &&
+             data.get('likes', 0) is number && data.get('likes', 0) >= 0 &&
+             data.get('shares', 0) is number && data.get('shares', 0) >= 0 &&
+             data.get('caption', '') is string && data.get('caption', '').size() < 2000;
+    }
+
+    function isValidCommission(data) {
+      return hasRequiredFields(['userId', 'amount', 'status', 'date', 'type']) &&
+             data.get('amount', 0) is number &&
+             data.get('status', '') in ['Pending', 'Paid', 'Cancelled', 'Waiting'] &&
+             data.get('type', '') in ['Direct', 'Team', 'Withdrawal'] &&
+             (data.get('sourceUid', '') == request.auth.uid || data.get('userId', '') == request.auth.uid);
+    }
+
+    function isValidNotification(data) {
+      return hasRequiredFields(['userId', 'title', 'message', 'date', 'type', 'read']) &&
+             data.get('type', '') in ['system', 'promo', 'order', 'commission'] &&
+             data.get('read', false) == false;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      // PII Protection: Only owner or admin can read
+      // Added list permission for referrals: users can list their own downline
+      // Added list permission for own email check
+      // Added get permission for upline/downline chain
+      allow get: if isOwner(userId) || isAdmin() || 
+                  (isAuthenticated() && resource != null && (resource.data.get('uplineId', '') == request.auth.uid || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('uplineId', '') == userId));
+      allow list: if isAdmin() || 
+                  (isAuthenticated() && resource != null && (resource.data.get('uplineId', '') == request.auth.uid || resource.data.get('uplinePath', []).hasAny([request.auth.uid]))) ||
+                  (isAuthenticated() && resource != null && resource.data.get('email', '') == request.auth.token.email);
+      allow create: if isOwner(userId) && 
+                      hasRequiredFields(['name', 'email', 'tier', 'accumulatedSales', 'walletBalance', 'referralCode', 'uid', 'teamSize', 'accumulatedIncome']) && 
+                      isValidUser(request.resource.data) && 
+                      uidUnchanged() && 
+                      (request.resource.data.get('role', 'user') == 'user' || isAdmin());
+      allow update: if isAdmin() || (
+                  isOwner(userId) && 
+                  isValidUser(request.resource.data) && 
+                  (request.resource.data.get('uid', userId) == userId) &&
+                  (request.resource.data.get('role', 'user') == resource.data.get('role', 'user'))
+                );
+      allow delete: if isAdmin();
+    }
+
+    match /publicProfiles/{userId} {
+      allow get, list: if isAuthenticated();
+      allow create, update: if isOwner(userId);
+      allow delete: if isAdmin();
+    }
+
+    match /products/{productId} {
+      allow read: if true;
+      allow create: if isAdmin() && isValidProduct(request.resource.data);
+      allow update: if isAdmin() || (isAuthenticated() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['sold', 'stock']));
+      allow delete: if isAdmin();
+    }
+
+    match /orders/{orderId} {
+      allow read: if isAuthenticated() && (resource.data.get('userId', '') == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && isValidOrder(request.resource.data);
+      allow update: if isAdmin() || (isAuthenticated() && resource.data.get('userId', '') == request.auth.uid && isValidOrder(request.resource.data) && request.resource.data.get('status', '') == resource.data.get('status', ''));
+      allow delete: if isAdmin();
+    }
+
+    function isValidInteractionUpdate(data) {
+      return (!('likes' in data) || (data.get('likes', 0) is number && data.get('likes', 0) >= 0)) &&
+             (!('shares' in data) || (data.get('shares', 0) is number && data.get('shares', 0) >= 0)) &&
+             (!('likedBy' in data) || (data.get('likedBy', []) is list)) &&
+             (!('comments' in data) || (data.get('comments', []) is list));
+    }
+
+    match /feed/{postId} {
+      allow read: if true;
+      allow create: if isAuthenticated() && isValidFeedItem(request.resource.data);
+      allow update: if isAdmin() || (
+        isAuthenticated() && (
+          (resource.data.get('userId', '') == request.auth.uid && isValidFeedItem(request.resource.data)) ||
+          (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes', 'likedBy', 'comments', 'shares']) && isValidInteractionUpdate(request.resource.data))
+        )
+      );
+      allow delete: if isAdmin() || (isAuthenticated() && resource.data.get('userId', '') == request.auth.uid);
+    }
+
+    match /commissions/{txId} {
+      allow read: if isAuthenticated() && (resource.data.get('userId', '') == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && isValidCommission(request.resource.data);
+      allow update, delete: if isAdmin();
+    }
+
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() && (resource.data.get('userId', '') == request.auth.uid || resource.data.get('userId', '') == 'global' || isAdmin());
+      allow create: if isAuthenticated() && isValidNotification(request.resource.data);
+      allow update: if isAuthenticated() && (resource.data.get('userId', '') == request.auth.uid && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']));
+      allow delete: if isAdmin();
+    }
+
+    match /counters/{counterId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated(); // Allow users to initialize and increment counters (e.g. for referral codes)
+      allow delete: if isAdmin();
+    }
+
+    match /ads/{adId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /systemSettings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /onboardingSlides/{slideId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /promotions/{promoId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /campaignAssets/{assetId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /{document=**} {
+      allow read, write: if isAdmin();
+    }
+  }
+}

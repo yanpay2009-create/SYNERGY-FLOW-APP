@@ -1,0 +1,8 @@
+{
+  "name": "APP SYNERGY FLOW",
+  "description": "Premium Affiliate Marketing Platform V5.1. A high-conversion ecosystem combining AI content tools with a dynamic tiered commission engine and enhanced visual UI.",
+  "requestFramePermissions": [
+    "geolocation",
+    "camera"
+  ]
+}

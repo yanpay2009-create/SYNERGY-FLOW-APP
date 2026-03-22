@@ -1,0 +1,278 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "username": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "phone": { "type": "string" },
+        "lineId": { "type": "string" },
+        "tier": { "type": "string", "enum": ["Starter", "Marketer", "Builder", "Executive"] },
+        "accumulatedSales": { "type": "number" },
+        "teamSize": { "type": "number" },
+        "accumulatedIncome": { "type": "number" },
+        "walletBalance": { "type": "number" },
+        "avatar": { "type": "string" },
+        "referralCode": { "type": "string" },
+        "pin": { "type": "string" },
+        "password": { "type": "string" },
+        "teamIncomeExpiry": { "type": "string" },
+        "kycDocumentType": { "type": "string", "enum": ["ThaiID", "Passport", "Other"] },
+        "kycFullName": { "type": "string" },
+        "hasWorkPermit": { "type": "boolean" },
+        "addresses": { "type": "array", "items": { "type": "object" } },
+        "bankAccounts": { "type": "array", "items": { "type": "object" } },
+        "savedCards": { "type": "array", "items": { "type": "object" } },
+        "kycStatus": { "type": "string", "enum": ["Unverified", "Pending", "Verified", "Rejected"] },
+        "idCardImage": { "type": "string" },
+        "paymentMethod": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "user"] },
+        "referrerCode": { "type": "string" },
+        "referrer": { "type": "string" },
+        "uplineId": { "type": "string" },
+        "favorites": { "type": "array", "items": { "type": "number" } },
+        "socials": {
+          "type": "object",
+          "properties": {
+            "facebook": { "type": "object", "properties": { "connected": { "type": "boolean" }, "name": { "type": "string" } } },
+            "line": { "type": "object", "properties": { "connected": { "type": "boolean" }, "name": { "type": "string" } } },
+            "google": { "type": "object", "properties": { "connected": { "type": "boolean" }, "name": { "type": "string" } } }
+          }
+        }
+      },
+      "required": ["name", "email", "tier", "accumulatedSales", "walletBalance", "referralCode"]
+    },
+    "Product": {
+      "title": "Product",
+      "description": "Product information",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "price": { "type": "number" },
+        "image": { "type": "string" },
+        "images": { "type": "array", "items": { "type": "string" } },
+        "category": { "type": "string" },
+        "sold": { "type": "number" },
+        "stock": { "type": "number" },
+        "description": { "type": "string" },
+        "descriptionImages": { "type": "array", "items": { "type": "string" } },
+        "isPromo": { "type": "boolean" },
+        "promoDiscount": { "type": "number" },
+        "expiryDate": { "type": "string" }
+      },
+      "required": ["name", "price", "image", "category", "sold", "stock"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Customer order",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "date": { "type": "string" },
+        "items": { "type": "array", "items": { "type": "object" } },
+        "total": { "type": "number" },
+        "status": { "type": "string", "enum": ["Pending", "To Ship", "Shipped", "Delivered", "Cancelled", "Return Pending", "Returned"] },
+        "shippingAddress": { "type": "object" },
+        "trackingNumber": { "type": "string" },
+        "shippingProvider": { "type": "string" },
+        "timeline": { "type": "array", "items": { "type": "object" } },
+        "returnReason": { "type": "string" },
+        "reviewedProductIds": { "type": "array", "items": { "type": "number" } }
+      },
+      "required": ["userId", "date", "items", "total", "status", "shippingAddress"]
+    },
+    "FeedItem": {
+      "title": "FeedItem",
+      "description": "Social feed post",
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "enum": ["image", "video"] },
+        "category": { "type": "string", "enum": ["Trending", "For You"] },
+        "user": { "type": "string" },
+        "userId": { "type": "string" },
+        "avatar": { "type": "string" },
+        "content": { "type": "string" },
+        "caption": { "type": "string" },
+        "mood": { "type": "string" },
+        "status": { "type": "string", "enum": ["Approved", "Pending"] },
+        "likes": { "type": "number" },
+        "shares": { "type": "number" },
+        "comments": { "type": "array", "items": { "type": "object" } },
+        "isAi": { "type": "boolean" },
+        "isAd": { "type": "boolean" },
+        "productId": { "type": "number" }
+      },
+      "required": ["type", "category", "user", "userId", "content", "caption", "status", "likes", "shares", "isAi"]
+    },
+    "Ad": {
+      "title": "Ad",
+      "description": "Advertisement",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "image": { "type": "string" },
+        "active": { "type": "boolean" },
+        "subtitle": { "type": "string" },
+        "placement": { "type": "string", "enum": ["home", "feed", "account", "home_banner", "home_banner_2"] },
+        "expiryDate": { "type": "string" }
+      },
+      "required": ["title", "image", "active", "placement"]
+    },
+    "CampaignAsset": {
+      "title": "CampaignAsset",
+      "description": "Marketing campaign asset",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "image": { "type": "string" },
+        "active": { "type": "boolean" },
+        "category": { "type": "string" },
+        "commission": { "type": "string" },
+        "status": { "type": "string", "enum": ["Active", "Upcoming", "Ended"] },
+        "adFormat": { "type": "string" },
+        "conditions": { "type": "string" }
+      },
+      "required": ["title", "description", "image", "active"]
+    },
+    "OnboardingSlide": {
+      "title": "OnboardingSlide",
+      "description": "Onboarding screen slide",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "desc": { "type": "string" },
+        "image": { "type": "string" }
+      },
+      "required": ["title", "desc", "image"]
+    },
+    "TeamMember": {
+      "title": "TeamMember",
+      "description": "Affiliate team member",
+      "type": "object",
+      "properties": {
+        "uplineId": { "type": "string" },
+        "name": { "type": "string" },
+        "tier": { "type": "string", "enum": ["Starter", "Marketer", "Builder", "Executive"] },
+        "avatar": { "type": "string" },
+        "totalSales": { "type": "number" },
+        "joinedDate": { "type": "string" },
+        "relationship": { "type": "string", "enum": ["Direct", "Indirect"] },
+        "phone": { "type": "string" },
+        "lineId": { "type": "string" },
+        "idCardImage": { "type": "string" },
+        "kycStatus": { "type": "string", "enum": ["Unverified", "Pending", "Verified", "Rejected"] }
+      },
+      "required": ["uplineId", "name", "tier", "totalSales", "joinedDate", "relationship"]
+    },
+    "CommissionTransaction": {
+      "title": "CommissionTransaction",
+      "description": "Commission or withdrawal transaction",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "orderId": { "type": "string" },
+        "date": { "type": "string" },
+        "source": { "type": "string" },
+        "type": { "type": "string", "enum": ["Direct", "Team", "Withdrawal"] },
+        "amount": { "type": "number" },
+        "salesVolume": { "type": "number" },
+        "status": { "type": "string", "enum": ["Pending", "Paid", "Completed", "Waiting", "Cancelled"] }
+      },
+      "required": ["userId", "date", "source", "type", "amount", "status"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "User notification",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "date": { "type": "string" },
+        "type": { "type": "string", "enum": ["order", "promo", "system"] },
+        "read": { "type": "boolean" },
+        "relatedId": { "type": "string" },
+        "relatedType": { "type": "string", "enum": ["order", "commission", "promo"] },
+        "relatedData": { "type": "string" }
+      },
+      "required": ["userId", "title", "message", "date", "type", "read"]
+    },
+    "SystemSettings": {
+      "title": "SystemSettings",
+      "description": "Global system settings",
+      "type": "object",
+      "properties": {
+        "logo": { "type": "string" },
+        "slipBackground": { "type": "string" },
+        "contactLinks": {
+          "type": "object",
+          "properties": {
+            "line": { "type": "string" },
+            "phone": { "type": "string" },
+            "email": { "type": "string" },
+            "website": { "type": "string" },
+            "terms": { "type": "string" },
+            "privacy": { "type": "string" }
+          }
+        }
+      },
+      "required": ["contactLinks"]
+    },
+    "Promotion": {
+      "title": "Promotion",
+      "description": "Active promotion",
+      "type": "object",
+      "properties": {
+        "image": { "type": "string" },
+        "title": { "type": "string" },
+        "active": { "type": "boolean" },
+        "link": { "type": "string" }
+      },
+      "required": ["image", "title", "active"]
+    },
+    "Counter": {
+      "title": "Counter",
+      "description": "Atomic counter for sequential IDs",
+      "type": "object",
+      "properties": {
+        "count": { "type": "number" }
+      },
+      "required": ["count"]
+    },
+    "PublicProfile": {
+      "title": "PublicProfile",
+      "description": "Publicly accessible user profile information",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "avatar": { "type": "string" },
+        "referralCode": { "type": "string" },
+        "tier": { "type": "string", "enum": ["Starter", "Marketer", "Builder", "Executive"] },
+        "teamSize": { "type": "number" },
+        "phone": { "type": "string" },
+        "lineId": { "type": "string" }
+      },
+      "required": ["name", "avatar", "referralCode", "tier"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": { "schema": "User", "description": "User profiles" },
+    "/publicProfiles/{userId}": { "schema": "PublicProfile", "description": "Public user profiles" },
+    "/products/{productId}": { "schema": "Product", "description": "Product catalog" },
+    "/orders/{orderId}": { "schema": "Order", "description": "Customer orders" },
+    "/feed/{postId}": { "schema": "FeedItem", "description": "Social feed posts" },
+    "/ads/{adId}": { "schema": "Ad", "description": "Advertisements" },
+    "/campaignAssets/{assetId}": { "schema": "CampaignAsset", "description": "Marketing assets" },
+    "/onboardingSlides/{slideId}": { "schema": "OnboardingSlide", "description": "Onboarding content" },
+    "/teamMembers/{memberId}": { "schema": "TeamMember", "description": "Affiliate team structure" },
+    "/commissions/{txId}": { "schema": "CommissionTransaction", "description": "Financial transactions" },
+    "/notifications/{notificationId}": { "schema": "Notification", "description": "User notifications" },
+    "/systemSettings/{settingId}": { "schema": "SystemSettings", "description": "Global settings" },
+    "/promotions/{promoId}": { "schema": "Promotion", "description": "Active promotions" },
+    "/counters/{counterId}": { "schema": "Counter", "description": "Sequential ID counters" }
+  }
+}
