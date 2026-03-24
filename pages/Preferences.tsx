@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Globe, MapPin, Share2, Shield, LogOut, ChevronRight, Lock, Type, Bell } from 'lucide-react';
 
 export const Preferences: React.FC = () => {
-  const { logout, language, fontSize, setFontSize, t, notificationsEnabled, setNotificationsEnabled } = useApp();
+  const { logout, language, fontSize, setFontSize, t, notificationsEnabled, setNotificationsEnabled, user } = useApp();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -100,7 +100,7 @@ export const Preferences: React.FC = () => {
 
       <div className="mb-6">
         <h3 className="text-xs font-bold text-gray-400 uppercase ml-2 mb-3">{t('pref.security')}</h3>
-        <PreferenceItem icon={Lock} label={t('pref.password')} to="/change-password" />
+        <PreferenceItem icon={Lock} label={user?.password ? t('pref.password') : t('pref.set_password')} to="/change-password" />
         <PreferenceItem icon={Shield} label={t('pref.pin')} to="/change-pin" />
       </div>
 

@@ -257,11 +257,31 @@
         "lineId": { "type": "string" }
       },
       "required": ["name", "avatar", "referralCode", "tier"]
+    },
+    "PhoneMap": {
+      "title": "PhoneMap",
+      "description": "Mapping of phone number to email for login",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "format": "email" }
+      },
+      "required": ["email"]
+    },
+    "EmailMap": {
+      "title": "EmailMap",
+      "description": "Mapping of email to existence flag for registration check",
+      "type": "object",
+      "properties": {
+        "exists": { "type": "boolean" }
+      },
+      "required": ["exists"]
     }
   },
   "firestore": {
     "/users/{userId}": { "schema": "User", "description": "User profiles" },
     "/publicProfiles/{userId}": { "schema": "PublicProfile", "description": "Public user profiles" },
+    "/phoneMap/{phone}": { "schema": "PhoneMap", "description": "Phone to email lookup" },
+    "/emailMap/{email}": { "schema": "EmailMap", "description": "Email existence check" },
     "/products/{productId}": { "schema": "Product", "description": "Product catalog" },
     "/orders/{orderId}": { "schema": "Order", "description": "Customer orders" },
     "/feed/{postId}": { "schema": "FeedItem", "description": "Social feed posts" },

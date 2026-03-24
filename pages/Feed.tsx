@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
-import { Share2, Copy, Heart, MessageCircle, Send, X, Check, Clock, ChevronUp, Sparkles, Play, ShieldCheck, UserPlus, Search, Plus, User } from 'lucide-react';
+import { Share2, Copy, Heart, MessageCircle, Send, X, Check, Clock, ChevronUp, Sparkles, Play, ShieldCheck, UserPlus, Search, Scan, Plus, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { FeedItem } from '../types';
 import { CountdownTimer } from '../components/CountdownTimer';
+
+import { ReferralModal } from '../components/ReferralModal';
 
 export const Feed: React.FC = () => {
   const { feed, ads, toggleFeedLike, addFeedComment, user, referrer, addReferrer, setBottomNavHidden, products, addToCart, isLoggedIn, showToast } = useApp();
@@ -44,8 +46,6 @@ export const Feed: React.FC = () => {
 
   // Referrer Modal for Feed
   const [showReferrerModal, setShowReferrerModal] = useState(false);
-  const [referrerCode, setReferrerCode] = useState('');
-  const [referrerError, setReferrerError] = useState('');
 
   // Users see all 'Approved' posts + their own 'Pending' posts
   const visibleFeed = feed.filter(f => f.status === 'Approved' || f.userId === user?.email);
@@ -62,7 +62,7 @@ export const Feed: React.FC = () => {
   }, [ads, currentTime]);
 
   const checkReferrerAction = (action: () => void) => {
-    if (!referrer) {
+    if (!user?.referrerCode) {
       setShowReferrerModal(true);
       return;
     }
@@ -70,6 +70,11 @@ export const Feed: React.FC = () => {
   };
 
   const handleShare = async (post: FeedItem) => {
+    if (!isLoggedIn || !user) {
+        navigate('/account');
+        return;
+    }
+
     checkReferrerAction(async () => {
         const affiliateLink = `${window.location.origin}/#/post/${post.id}?ref=${user?.referralCode || 'USER'}`;
         const shareText = `${post.caption}\n\nShop Now: ${affiliateLink} #SynergyFlow`;
@@ -93,17 +98,6 @@ export const Feed: React.FC = () => {
         setCopiedId(id);
         setTimeout(() => setCopiedId(null), 2000);
     });
-  };
-
-  const handleAddReferrer = async () => {
-      if (!referrerCode) return;
-      const result = await addReferrer(referrerCode);
-      if (result.success) {
-          setShowReferrerModal(false);
-          setReferrerError('');
-      } else {
-          setReferrerError(result.error || "Invalid Referrer Code.");
-      }
   };
 
   const handleLike = (id: number) => {
@@ -153,7 +147,7 @@ export const Feed: React.FC = () => {
     <div className="pb-0 pt-0 max-w-md mx-auto min-h-screen bg-gray-50 dark:bg-gray-950 relative transition-colors duration-300">
       
       {/* Top Header Bar (Always visible, centered tabs) */}
-      <div className="fixed top-0 left-0 right-0 z-[100] px-4 py-2.5 pointer-events-none">
+      <div className="fixed top-10 left-0 right-0 z-[100] px-4 py-2.5 pointer-events-none">
         <div className="max-w-md mx-auto flex items-center justify-center">
           <div className="flex space-x-1 p-1 rounded-full bg-gray-100/80 dark:bg-gray-800/80 backdrop-blur-md border border-gray-200 dark:border-gray-700 shadow-lg pointer-events-auto">
             <button 
@@ -183,7 +177,7 @@ export const Feed: React.FC = () => {
       {/* Advertising Banners - Sticky so content can overlap it */}
       <div className="sticky top-0 z-0">
         {activeAds.length > 0 && (
-            <div className="w-full h-64 bg-gray-200 dark:bg-gray-800 overflow-hidden">
+            <div className="w-full aspect-[16/9] bg-gray-200 dark:bg-gray-800 overflow-hidden">
                 <div className="flex overflow-x-auto snap-x no-scrollbar h-full">
                   {activeAds.map(ad => (
                       <div key={ad.id} className="min-w-full h-full relative snap-center group">
@@ -211,7 +205,7 @@ export const Feed: React.FC = () => {
       )}
 
       {/* Overlapping Content - Higher z-index to cover the sticky ad */}
-      <div className={`relative z-10 bg-gray-50 dark:bg-gray-950 -mt-8 pt-6 px-4 min-h-screen pb-32`}>
+      <div className={`relative z-10 bg-gray-50 dark:bg-gray-950 -mt-6 pt-6 px-4 min-h-screen pb-28`}>
         <div className="space-y-6">
         {filteredFeed.length === 0 ? (
             <div className="text-center py-20 text-gray-400">
@@ -321,25 +315,7 @@ export const Feed: React.FC = () => {
 
       {/* REFERRER REQUIRED MODAL */}
       {showReferrerModal && (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center px-6">
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-md animate-in fade-in duration-500" onClick={() => setShowReferrerModal(false)}></div>
-            <div className="bg-white dark:bg-gray-800 w-full max-w-sm rounded-[40px] p-8 shadow-2xl relative z-10 animate-in zoom-in-95 border border-white/10">
-                <button onClick={() => setShowReferrerModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"><X size={24} /></button>
-                <div className="text-center">
-                    <div className="w-20 h-20 bg-blue-50 dark:bg-blue-900/20 text-synergy-blue rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm border border-blue-100 dark:border-blue-800"><UserPlus size={40} /></div>
-                    <h2 className="text-2xl font-black text-gray-900 dark:text-white mb-2 tracking-tight">Referrer Required</h2>
-                    <p className="text-gray-500 dark:text-gray-400 text-sm mb-8 leading-relaxed font-medium">To start promoting and earning commissions from the feed, you must link your account to a referrer.</p>
-                    <div className="mb-6">
-                        <input value={referrerCode} onChange={(e) => { setReferrerCode(e.target.value.toUpperCase()); setReferrerError(''); }} placeholder="EX. BOSS001" className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl py-4 px-4 text-center font-black text-xl uppercase tracking-widest text-synergy-blue placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-synergy-blue/30 shadow-inner" />
-                        {referrerError && <p className="text-red-500 text-xs mt-2 font-bold uppercase tracking-tighter animate-shake">{referrerError}</p>}
-                    </div>
-                    <div className="flex flex-col space-y-3">
-                        <button onClick={handleAddReferrer} disabled={!referrerCode} className="w-full bg-synergy-blue text-white font-black py-4 rounded-2xl shadow-glow active:scale-95 transition flex items-center justify-center space-x-2 h-14"><Search size={20} /><span className="uppercase tracking-widest text-xs">Link & Promote</span></button>
-                        <button onClick={() => setShowReferrerModal(false)} className="text-[11px] font-black text-gray-400 hover:text-gray-600 transition uppercase tracking-[0.3em] py-2">Cancel</button>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <ReferralModal onClose={() => setShowReferrerModal(false)} />
       )}
 
       {/* COMMENTS MODAL */}
@@ -379,6 +355,7 @@ export const Feed: React.FC = () => {
               </div>
           </div>
       )}
+
     </div>
   );
 };

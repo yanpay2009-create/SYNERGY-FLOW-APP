@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import { 
   ArrowLeft, 
@@ -20,17 +20,32 @@ import {
   Trophy,
   Award,
   Clock,
+  ShoppingBag,
   TrendingUp
 } from 'lucide-react';
-import { ShoppingBagIcon } from '../components/ShoppingBagIcon';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Notification, CommissionTransaction, UserTier } from '../types';
 
 export const Notifications: React.FC = () => {
   const { notifications, markNotificationAsRead, t, user, allCommissions, allOrders, broadcastPromotion } = useApp();
   const navigate = useNavigate();
+  const location = useLocation();
   const [selectedNotif, setSelectedNotif] = useState<Notification | null>(null);
-  const [selectedCommission, setSelectedCommission] = useState<CommissionTransaction | null>(null);
+
+  const handledNotifId = useRef<string | null>(null);
+
+  useEffect(() => {
+    const openNotifId = location.state?.openNotifId;
+    if (openNotifId && notifications.length > 0 && handledNotifId.current !== String(openNotifId)) {
+        const notif = notifications.find(n => String(n.id) === String(openNotifId));
+        if (notif) {
+            handleNotifClick(notif);
+            handledNotifId.current = String(openNotifId);
+            // Clear state to prevent re-triggering
+            window.history.replaceState({}, document.title);
+        }
+    }
+  }, [location.state, notifications]);
 
   const getIcon = (notif: Notification) => {
     if (notif.userId === 'global') {
@@ -38,7 +53,7 @@ export const Notifications: React.FC = () => {
         return <Users size={20} />;
     }
     switch (notif.type) {
-      case 'order': return <ShoppingBagIcon size={20} />;
+      case 'order': return <ShoppingBag size={20} />;
       case 'promo': return <Tag size={20} />;
       default: return <Info size={20} />;
     }
@@ -56,7 +71,7 @@ export const Notifications: React.FC = () => {
     }
   };
 
-  const handleNotifClick = (notif: Notification) => {
+  function handleNotifClick(notif: Notification) {
     markNotificationAsRead(notif.id);
     
     // 1. Handle Platform Event (Promotion Broadcast)
@@ -70,14 +85,11 @@ export const Notifications: React.FC = () => {
         }
     }
 
-    // 2. Personal commission notification -> show detail popup
-    if (notif.relatedType === 'commission' || notif.title.includes('Commission Settled')) {
-        const txId = Number(notif.relatedId);
-        const commission = allCommissions.find(c => c.id === txId);
-        if (commission) {
-            setSelectedCommission(commission);
-            return;
-        }
+    // 2. Personal commission notification -> go to commission history
+    if (notif.relatedType === 'commission' || notif.title.includes('Commission') || notif.title.includes('ค่าคอมมิชชั่น')) {
+        const txId = notif.relatedId;
+        navigate('/commissions', { state: { txId } });
+        return;
     }
 
     // 3. Personal order notification -> go to orders
@@ -88,17 +100,15 @@ export const Notifications: React.FC = () => {
     
     // 4. Default -> show general detail popup
     setSelectedNotif(notif);
-  };
+  }
 
   const theme = {
     gradient: 'from-synergy-blue to-blue-600',
     communityGradient: 'from-indigo-600 to-purple-600'
   };
 
-  const linkedOrder = selectedCommission?.orderId ? allOrders.find(o => o.id === selectedCommission.orderId) : null;
-
   return (
-    <div className="pb-24 pt-4 px-4 max-w-md mx-auto min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+    <div className="pb-24 pt-10 px-4 max-w-md mx-auto min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center">
             <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full transition">
@@ -160,81 +170,6 @@ export const Notifications: React.FC = () => {
             })
         )}
       </div>
-
-      {/* POPUP 2: PERSONAL COMMISSION DETAIL */}
-      {selectedCommission && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-8 bg-black/70 backdrop-blur-md animate-in fade-in duration-300" onClick={() => setSelectedCommission(null)}>
-              <div className="bg-white dark:bg-gray-900 w-full max-w-[310px] rounded-3xl overflow-hidden shadow-2xl animate-in zoom-in-95 relative border border-white/20 dark:border-gray-800" onClick={(e) => e.stopPropagation()}>
-                  <div className={`p-5 bg-gradient-to-r ${theme.gradient} flex justify-between items-center relative overflow-hidden`}>
-                      <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-8 -mt-8 blur-xl"></div>
-                      <div className="flex items-center space-x-3 relative z-10">
-                          <div className="w-14 h-14 rounded-full border-2 border-white/60 overflow-hidden shadow-md bg-white/20">
-                              <img src={user?.avatar || undefined} className="w-full h-full object-cover" alt="User" />
-                          </div>
-                          <div className="min-w-0 text-white">
-                              <h3 className="font-black text-[13px] tracking-wide leading-tight">My Commission</h3>
-                              <p className="text-[9px] font-bold uppercase opacity-80">{user?.tier} Rank</p>
-                          </div>
-                      </div>
-                      <div className="relative z-10">
-                          <button onClick={() => setSelectedCommission(null)} className="p-1.5 bg-white/20 backdrop-blur-md rounded-full text-white hover:bg-white/30 transition">
-                              <X size={16} />
-                          </button>
-                      </div>
-                  </div>
-
-                  <div className="p-5 space-y-5">
-                      <div className="text-center py-1">
-                          <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">
-                              {selectedCommission.type} Earnings
-                          </p>
-                          <h2 className={`text-3xl font-black ${selectedCommission.status === 'Paid' ? 'text-emerald-500' : 'text-gray-900 dark:text-white'}`}>
-                              ฿{(selectedCommission.amount ?? 0).toLocaleString()}
-                          </h2>
-                          <div className={`mt-2 inline-flex px-2.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest border ${selectedCommission.status === 'Paid' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-yellow-50 text-yellow-600 border-yellow-100'}`}>
-                              {selectedCommission.status}
-                          </div>
-                      </div>
-
-                      <div className="space-y-3">
-                          <div className="flex justify-between items-center text-xs">
-                              <div className="flex items-center space-x-2 text-gray-400"><Calendar size={12} /><span>Date</span></div>
-                              <span className="font-bold text-gray-900 dark:text-white">{selectedCommission.date}</span>
-                          </div>
-                          <div className="flex justify-between items-center text-xs">
-                              <div className="flex items-center space-x-2 text-gray-400"><Hash size={12} /><span>Order</span></div>
-                              <span className="font-bold text-gray-900 dark:text-white">#{selectedCommission.orderId?.split('-')[1] || 'N/A'}</span>
-                          </div>
-                          <div className="flex justify-between items-center text-xs">
-                              <div className="flex items-center space-x-2">
-                                  <div className="w-6 h-6 rounded-full overflow-hidden border border-gray-100 shadow-sm bg-gray-100 shrink-0">
-                                      <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedCommission.source}`} className="w-full h-full object-cover" alt="Buyer" />
-                                  </div>
-                                  <span className="font-bold text-gray-900 dark:text-white truncate max-w-[120px]">{selectedCommission.source.replace('Direct Order: ', '').replace('Team Order: ', '')}</span>
-                              </div>
-                              <span className="font-black text-[10px] text-gray-900 dark:text-white uppercase tracking-tighter">
-                                  Success
-                              </span>
-                          </div>
-                      </div>
-
-                      {linkedOrder && (
-                          <div className="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-2xl border border-gray-100 dark:border-gray-700">
-                              <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-2.5 flex items-center"><ShoppingBagIcon size={10} className="mr-1" /> Items</p>
-                              <div className="flex space-x-2 overflow-x-auto no-scrollbar">
-                                  {linkedOrder.items.map((item, idx) => (
-                                      <div key={idx} className="relative w-10 h-10 shrink-0">
-                                          <img src={item.image || undefined} className="w-full h-full object-cover rounded-md border border-white dark:border-gray-700 shadow-sm" alt="p" />
-                                          <div className="absolute -top-1 -right-1 bg-synergy-blue text-white w-3.5 h-3.5 rounded-full flex items-center justify-center text-[7px] font-bold">x{item.quantity}</div>
-                                      </div>
-                                  ))}
-                              </div>
-                          </div>
-                      )}
-                  </div>
-              </div>
-          </div>
-      )}
 
       {/* POPUP 3: GENERAL NOTIF */}
       {selectedNotif && (

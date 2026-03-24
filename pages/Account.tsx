@@ -37,12 +37,17 @@ import {
   Loader2,
   UserPlus,
   Search,
+  QrCode,
+  Scan,
   Clock,
   Trophy,
   ArrowRight
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Auth } from './Auth';
+import { QRScanner } from '../components/QRScanner';
+
+import { ReferralModal } from '../components/ReferralModal';
 
 const MenuRow = ({ icon: Icon, label, value, to, colorClass, requiresPin, navigate, triggerPinGate }: any) => (
   <button 
@@ -127,15 +132,13 @@ export const Account: React.FC = () => {
 
   // Referrer Modal State for Account Page
   const [showReferrerModal, setShowReferrerModal] = useState(false);
-  const [referrerCode, setReferrerCode] = useState('');
-  const [referrerError, setReferrerError] = useState('');
   
   // Auto-show referrer modal for new users without an upline
   useEffect(() => {
-    if (isLoggedIn && user && !user.uplineId && user.role !== 'admin') {
+    if (isLoggedIn && user && !user.referrerCode && user.role !== 'admin') {
       setShowReferrerModal(true);
     }
-  }, [isLoggedIn, user?.uplineId, user?.role]);
+  }, [isLoggedIn, user?.referrerCode, user?.role]);
 
   const todayString = useMemo(() => new Date().toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }), []);
   
@@ -332,7 +335,7 @@ export const Account: React.FC = () => {
   };
 
   const handleShareProfile = async () => {
-    if (!referrer) {
+    if (!user?.referrerCode) {
       setShowReferrerModal(true);
       return;
     }
@@ -353,18 +356,6 @@ export const Account: React.FC = () => {
     } else {
       navigator.clipboard.writeText(shareData.url);
       showToast({ message: 'Referral link copied to clipboard!', type: 'success' });
-    }
-  };
-
-  const handleAddReferrerFromModal = async () => {
-    if (!referrerCode) return;
-    const result = await addReferrer(referrerCode);
-    if (result.success) {
-        setShowReferrerModal(false);
-        setReferrerError('');
-        showToast({ message: "Referrer linked! You can now share your profile.", type: 'success' });
-    } else {
-        setReferrerError(result.error || "Referrer code not found. Please try again.");
     }
   };
 
@@ -424,32 +415,14 @@ export const Account: React.FC = () => {
 
       {/* REFERRER REQUIRED MODAL */}
       {showReferrerModal && (
-        <div className="fixed inset-0 z-[300] flex items-center justify-center px-6">
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-md animate-in fade-in duration-300" onClick={() => setShowReferrerModal(false)}></div>
-            <div className="bg-white dark:bg-gray-800 w-full max-w-sm rounded-[40px] p-8 shadow-2xl relative z-10 animate-in zoom-in-95 border border-white/10">
-                <button onClick={() => setShowReferrerModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-2"><X size={24} /></button>
-                <div className="text-center">
-                    <div className="w-20 h-20 bg-blue-50 dark:bg-blue-900/20 text-synergy-blue rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm border border-blue-100 dark:border-blue-800"><UserPlus size={40} /></div>
-                    <h2 className="text-2xl font-black text-gray-900 dark:text-white mb-2 tracking-tight">Referrer Required</h2>
-                    <p className="text-gray-500 dark:text-gray-400 text-sm mb-8 leading-relaxed font-medium">To activate your affiliate profile and start sharing, you must link your account to a referrer code first.</p>
-                    <div className="mb-6 relative">
-                        <input value={referrerCode} onChange={(e) => { setReferrerCode(e.target.value.toUpperCase()); setReferrerError(''); }} placeholder="EX. BOSS001" className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl py-4 px-4 text-center font-black text-xl uppercase tracking-[0.2em] text-synergy-blue placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-synergy-blue/30 shadow-inner" />
-                        {referrerError && <p className="text-red-500 text-xs mt-2 font-bold uppercase tracking-tighter animate-shake">{referrerError}</p>}
-                    </div>
-                    <div className="flex flex-col space-y-3">
-                        <button onClick={handleAddReferrerFromModal} disabled={!referrerCode} className="w-full bg-synergy-blue text-white font-black py-4 rounded-2xl shadow-glow active:scale-95 transition flex items-center justify-center space-x-2 disabled:opacity-50 disabled:shadow-none"><Search size={20} /><span>Link Referrer</span></button>
-                        <button onClick={() => setShowReferrerModal(false)} className="text-xs font-black text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition uppercase tracking-[0.2em] py-2">Cancel</button>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <ReferralModal onClose={() => setShowReferrerModal(false)} />
       )}
 
       {/* MAIN CONTENT AREA */}
-      <div className="relative z-10 bg-white dark:bg-gray-900 rounded-t-[40px] mt-32 pt-10 px-4 pb-20 shadow-[0_-15px_40px_rgba(0,0,0,0.08)] min-h-[calc(100vh-8rem)]">
+      <div className="relative z-10 bg-white dark:bg-gray-900 rounded-t-[40px] mt-32 pt-10 px-4 pb-16 shadow-[0_-15px_40px_rgba(0,0,0,0.08)] min-h-[calc(100vh-8rem)]">
           
           {/* Action Icons Area */}
-          <div className="absolute top-6 right-6 flex items-center space-x-2.5 z-30">
+          <div className="absolute top-10 right-6 flex items-center space-x-2.5 z-30">
               <button onClick={() => triggerPinGate('/withdraw')} className={`w-9 h-9 ${colors.bgLight} backdrop-blur-sm rounded-full flex items-center justify-center ${colors.text} shadow-sm border border-white dark:border-gray-700 active:scale-90 transition-all`}><Wallet size={18} /></button>
               <button onClick={() => navigate('/referrer-info')} className={`w-9 h-9 ${colors.bgLight} backdrop-blur-sm rounded-full flex items-center justify-center ${colors.text} shadow-sm border border-white dark:border-gray-700 active:scale-90 transition-all`}><UserCheck size={18} /></button>
               <button onClick={handleShareProfile} className={`w-9 h-9 ${colors.bgLight} backdrop-blur-sm rounded-full flex items-center justify-center ${colors.text} shadow-sm border border-white dark:border-gray-700 active:scale-90 transition-all`}><Share2 size={18} /></button>
@@ -524,16 +497,24 @@ export const Account: React.FC = () => {
             ) : (
                 <div 
                   onClick={() => navigate('/promotions')}
-                  className="w-full h-32 rounded-xl bg-gradient-to-br from-synergy-blue to-purple-800 mb-8 p-5 flex flex-col justify-center text-white shadow-soft relative overflow-hidden group cursor-pointer active:scale-[0.98] transition-all border border-white/60 dark:border-gray-700"
+                  className="w-full h-32 rounded-xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl mb-8 p-6 flex flex-col justify-center shadow-soft dark:shadow-none border border-white/60 dark:border-gray-700 relative overflow-hidden group transition-all duration-200 cursor-pointer active:scale-[0.98]"
                 >
-                    <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-12 -mt-12 blur-2xl"></div>
+                    <div className="absolute bottom-0 right-0 w-32 h-32 bg-gradient-to-tl from-blue-100/50 dark:from-blue-900/20 to-transparent rounded-tl-[100px] pointer-events-none"></div>
+                    <div className={`absolute top-0 left-0 w-24 h-24 bg-gradient-to-br ${colors.decoration} to-transparent rounded-br-[80px] pointer-events-none`}></div>
+                    
                     <div className="relative z-10">
-                        <h3 className="text-lg font-black mb-1">Empower Your Network</h3>
-                        <p className="text-[10px] opacity-80 font-medium line-clamp-1">Earn up to 30% commission on every referral.</p>
-                        <button className="mt-3 bg-white text-synergy-blue px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center space-x-2 group-hover:bg-synergy-blue group-hover:text-white transition-all">
-                            <span>Explore More</span>
-                            <ArrowRight size={10} />
-                        </button>
+                        <div className={`inline-flex items-center space-x-2 ${colors.bgLight} px-2 py-1 rounded-full mb-2 border border-white/50 dark:border-gray-600 shadow-sm`}>
+                            <Sparkles size={10} className={colors.text} />
+                            <span className={`text-[8px] ${colors.text} font-black uppercase tracking-wider`}>Promotion</span>
+                        </div>
+                        <h3 className={`text-lg font-black ${colors.text} leading-tight mb-1`}>Empower Your Network</h3>
+                        <p className="text-[10px] text-gray-500 dark:text-gray-400 font-medium line-clamp-1">Earn up to 30% commission on every referral.</p>
+                        
+                        <div className="absolute right-0 bottom-0">
+                             <div className={`p-2 rounded-full ${colors.bgLight} ${colors.text} border border-white/50 dark:border-gray-600 shadow-sm group-hover:scale-110 transition-transform`}>
+                                <ArrowRight size={14} />
+                             </div>
+                        </div>
                     </div>
                 </div>
             )
@@ -573,6 +554,7 @@ export const Account: React.FC = () => {
              </div>
           </div>
       </div>
+
     </div>
   );
 };

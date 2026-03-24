@@ -262,6 +262,7 @@ export interface ToastMessage {
   image?: string;
   description?: string;
   link?: string;
+  relatedId?: string;
 }
 
 export type KYCStatus = 'Unverified' | 'Pending' | 'Verified' | 'Rejected';
@@ -315,6 +316,7 @@ export interface AppContextType {
   systemSettings: SystemSettings;
   isSearchActive: boolean;
   setIsSearchActive: (active: boolean) => void;
+  isQuotaExceeded: boolean;
   liveSales: { id: string, name: string, amount: number, time: string }[];
   
   // Level Up Celebration
@@ -354,9 +356,10 @@ export interface AppContextType {
   fontSize: FontSize;
   setFontSize: (size: FontSize) => void;
   t: (key: string) => string;
+  isLoggingIn: boolean;
   
-  login: (email?: string, password?: string, isRegister?: boolean) => Promise<void>;
-  register: (email: string, password: string, username: string) => Promise<void>;
+  login: (emailOrPhone?: string, password?: string, isRegister?: boolean) => Promise<boolean>;
+  register: (emailOrPhone: string, password: string, username: string) => Promise<void>;
   logout: () => void;
   addToCart: (product: Product, quantity?: number) => void;
   removeFromCart: (productId: number) => void;
@@ -409,6 +412,7 @@ export interface AppContextType {
   updateUserSocials: (platform: 'facebook' | 'line' | 'google', connected: boolean, name: string) => Promise<void>;
   updateUserSecurity: (type: 'password' | 'pin', value: string) => Promise<void>;
   addReferrer: (code: string) => Promise<{ success: boolean; error?: string }>;
+  getPublicProfileByCode: (code: string) => Promise<any | null>;
   updateOrderAddress: (orderId: string, address: Address) => Promise<void>;
 
   // Admin Methods
@@ -441,8 +445,10 @@ export interface AppContextType {
   updateUserAdminProfile: (userId: string, data: Partial<User>) => Promise<void>;
   factoryReset: () => Promise<void>;
   healReferralCodes: () => Promise<void>;
+  healPhoneMap: () => Promise<void>;
   healTeamSizes: () => Promise<void>;
   healUplinePaths: () => Promise<void>;
+  refreshAllData: () => Promise<void>;
   toggleFavorite: (productId: number) => void;
   isFavorite: (productId: number) => boolean;
 }

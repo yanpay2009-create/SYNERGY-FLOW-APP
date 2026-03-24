@@ -8,7 +8,7 @@ type AuthStep = 'form' | 'otp';
 export const Auth: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [authStep, setAuthStep] = useState<AuthStep>('form');
-  const { login, register, addReferrer, systemSettings, t, updateUserSecurity, language, showToast } = useApp();
+  const { login, register, addReferrer, systemSettings, t, updateUserSecurity, language, showToast, isLoggingIn } = useApp();
   const navigate = useNavigate();
   
   // Form State
@@ -39,8 +39,10 @@ export const Auth: React.FC = () => {
     e.preventDefault();
     if (isLogin) {
         // Simple login logic
-        await login(emailOrPhone, password);
-        navigate('/home');
+        const success = await login(emailOrPhone, password);
+        if (success) {
+          navigate('/home');
+        }
     } else {
         // Validation for Sign Up
         if (password !== confirmPassword) {
@@ -288,9 +290,18 @@ export const Auth: React.FC = () => {
           )}
 
           <div className="pt-2">
-            <button className="w-full bg-synergy-blue text-white font-black py-4 rounded-2xl shadow-glow active:scale-[0.98] transition uppercase tracking-[0.2em] text-xs flex items-center justify-center space-x-2">
-              <span>{isLogin ? t('auth.signin') : t('auth.signup')}</span>
-              <ArrowRight size={16} />
+            <button 
+              disabled={isLoggingIn}
+              className="w-full bg-synergy-blue text-white font-black py-4 rounded-2xl shadow-glow active:scale-[0.98] transition uppercase tracking-[0.2em] text-xs flex items-center justify-center space-x-2 disabled:opacity-70 disabled:shadow-none"
+            >
+              {isLoggingIn ? (
+                <Loader2 size={18} className="animate-spin" />
+              ) : (
+                <>
+                  <span>{isLogin ? t('auth.signin') : t('auth.signup')}</span>
+                  <ArrowRight size={16} />
+                </>
+              )}
             </button>
           </div>
         </form>

@@ -228,12 +228,12 @@ export const Home: React.FC = () => {
   }, [user]);
 
   return (
-    <div className="pb-24 pt-0 max-w-md mx-auto min-h-screen bg-gray-50 dark:bg-gray-900 relative transition-colors duration-300 font-sans">
+    <div className="pb-20 pt-0 max-w-md mx-auto min-h-screen bg-gray-50 dark:bg-gray-900 relative transition-colors duration-300 font-sans">
       {/* Unified Sticky Header */}
       <div className={`fixed top-0 left-0 right-0 z-[100] max-w-md mx-auto transition-all duration-500 ease-in-out ${
         scrollingUp || scrolled || homeAds.length === 0
-          ? 'bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl py-3 px-4 shadow-sm'
-          : 'py-4 px-4 bg-transparent'
+          ? 'bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl pt-10 pb-3 px-4 shadow-sm'
+          : 'pt-10 pb-4 px-4 bg-transparent'
       }`}>
         <div className="flex items-center space-x-3">
           <div className={`flex-1 flex items-center px-4 py-2 rounded-2xl border transition-all duration-500 ease-in-out ${
@@ -278,7 +278,7 @@ export const Home: React.FC = () => {
       </div>
 
       {homeAds.length > 0 && (
-        <div className="sticky top-0 w-full h-64 bg-gray-200 dark:bg-gray-800 overflow-hidden z-0">
+        <div className="sticky top-0 w-full aspect-[4/3] bg-gray-200 dark:bg-gray-800 overflow-hidden z-0">
            {/* Header was here, now moved to fixed position above */}
            
            {homeAds.map((ad, index) => (

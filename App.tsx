@@ -47,6 +47,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { PromoPopup } from './components/PromoPopup';
 import { FloatingToast } from './components/FloatingToast';
 import { LevelUpPopup } from './components/LevelUpPopup';
+import { QuotaBanner } from './components/QuotaBanner';
 
 import { ErrorBoundary } from './src/components/ErrorBoundary';
 
@@ -56,6 +57,7 @@ const App: React.FC = () => {
       <AppProvider>
         <HashRouter>
           <div className="font-sans text-gray-900 bg-gray-100 dark:bg-gray-900 dark:text-gray-100 min-h-screen transition-colors duration-300">
+            <QuotaBanner />
             <Routes>
               <Route path="/" element={<Onboarding />} />
               <Route path="/login" element={<Navigate to="/account" replace />} />

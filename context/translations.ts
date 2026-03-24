@@ -105,6 +105,7 @@ export const dictionary: Record<string, { en: string; th: string; mm: string }> 
   'pref.addresses': { en: 'Address Book', th: 'สมุดที่อยู่', mm: 'လိပ်စာစာအုပ်' },
   'pref.social': { en: 'Social Accounts', th: 'บัญชีโซเชียล', mm: 'ဆိုရှယ်အကောင့်များ' },
   'pref.password': { en: 'Change Password', th: 'เปลี่ยนรหัสผ่าน', mm: 'စကားဝှက်ပြောင်းရန်' },
+  'pref.set_password': { en: 'Set Password', th: 'ตั้งค่ารหัสผ่าน', mm: 'စကားဝှက်သတ်မှတ်ရန်' },
   'pref.pin': { en: 'Security PIN', th: 'รหัส PIN', mm: 'လုံခြုံရေး PIN' },
   'pref.logout': { en: 'Log Out', th: 'ออกจากระบบ', mm: 'အကောင့်ထွက်ရန်' },
   'pref.settings': { en: 'Preferences', th: 'การตั้งค่า', mm: 'ပြင်ဆင်သတ်မှတ်ချက်များ' },

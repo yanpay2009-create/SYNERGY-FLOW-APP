@@ -66,10 +66,31 @@ export const KYC: React.FC = () => {
 
   // CAMERA FIX: Ensure video element is connected to stream after it mounts
   useEffect(() => {
+    let isMounted = true;
     if (kycStep === 'camera' && stream && videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.play().catch(e => console.error("Video play failed", e));
+        const video = videoRef.current;
+        video.srcObject = stream;
+        
+        const playVideo = async () => {
+            if (!video.isConnected) return;
+            try {
+                const playPromise = video.play();
+                if (playPromise !== undefined) {
+                    await playPromise;
+                }
+            } catch (e) {
+                // Ignore AbortError and interruptions when media is removed or playback is stopped
+                if (isMounted && e instanceof Error && 
+                    e.name !== 'AbortError' && 
+                    !e.message.includes('interrupted') &&
+                    !e.message.includes('removed')) {
+                    console.error("Video play failed", e);
+                }
+            }
+        };
+        playVideo();
     }
+    return () => { isMounted = false; };
   }, [kycStep, stream]);
 
   // Cleanup camera on unmount
@@ -310,7 +331,7 @@ export const KYC: React.FC = () => {
   }
 
   return (
-    <div className="pb-24 pt-8 px-4 max-w-md mx-auto min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors overflow-hidden">
+    <div className="pb-24 pt-10 px-4 max-w-md mx-auto min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors overflow-hidden">
       <div className="flex items-center mb-6">
         <button 
             onClick={() => {
@@ -386,7 +407,6 @@ export const KYC: React.FC = () => {
                 <div className="relative aspect-[4/3] bg-black rounded-3xl overflow-hidden shadow-2xl border-4 border-gray-100 dark:border-gray-700">
                     <video 
                         ref={videoRef} 
-                        autoPlay 
                         playsInline 
                         muted 
                         className="w-full h-full object-cover" 

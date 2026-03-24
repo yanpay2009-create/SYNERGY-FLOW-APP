@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { io, Socket } from "socket.io-client";
-import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile, updatePassword, EmailAuthProvider } from 'firebase/auth';
 import { collection, doc, onSnapshot, setDoc, updateDoc, deleteDoc, query, where, getDoc, getDocs, addDoc, serverTimestamp, Timestamp, runTransaction, increment, limit } from 'firebase/firestore';
 import { ref, set, push, onValue, limitToLast, query as rtdbQuery } from 'firebase/database';
 import { auth, db, rtdb } from '../src/firebase';
@@ -58,9 +58,21 @@ interface FirestoreErrorInfo {
   }
 }
 
-function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null, setQuotaExceeded?: (val: boolean) => void) {
+  const errorMsg = error instanceof Error ? error.message : String(error);
+  const isQuotaError = errorMsg.includes('Quota limit exceeded') || errorMsg.includes('quota-exceeded');
+  
+  if (isQuotaError) {
+    if (setQuotaExceeded) setQuotaExceeded(true);
+    localStorage.setItem('synergy_quota_exceeded_timestamp', String(Date.now()));
+    // Suppress redundant quota error logs to avoid console spam
+    const lastLog = (window as any)._lastQuotaErrorLog || 0;
+    if (Date.now() - lastLog < 30000) return;
+    (window as any)._lastQuotaErrorLog = Date.now();
+  }
+
   const errInfo: FirestoreErrorInfo = {
-    error: error instanceof Error ? error.message : String(error),
+    error: errorMsg,
     authInfo: {
       userId: auth.currentUser?.uid,
       email: auth.currentUser?.email,
@@ -78,7 +90,11 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
     path
   }
   console.error('Firestore Error: ', JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
+  
+  // Only throw if it's NOT a quota error to prevent uncaught exceptions crashing the app
+  if (!isQuotaError) {
+    throw new Error(JSON.stringify(errInfo));
+  }
 }
 
 export const TIER_THRESHOLDS = {
@@ -120,6 +136,9 @@ const TIER_DISCOUNTS = {
   [UserTier.BUILDER]: 0.20,
   [UserTier.EXECUTIVE]: 0.30
 };
+
+const FETCH_COOLDOWN = 15 * 60 * 1000; // 15 minutes cooldown for auto-fetches
+const QUOTA_RESET_TIME = 24 * 60 * 60 * 1000; // 24 hours
 
 const DEFAULT_USER_EMAIL = "yanpay2009@gmail.com";
 
@@ -164,10 +183,38 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return (saved as FontSize) || 'medium';
   });
 
-  const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
-  const [feed, setFeed] = useState<FeedItem[]>([]);
-  const [ads, setAds] = useState<Ad[]>(INITIAL_ADS);
-  const [campaignAssets, setCampaignAssets] = useState<CampaignAsset[]>(INITIAL_ASSETS);
+  const [products, setProducts] = useState<Product[]>(() => {
+    try {
+      const cached = localStorage.getItem('synergy_cached_products');
+      return cached ? JSON.parse(cached) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+  const [feed, setFeed] = useState<FeedItem[]>(() => {
+    try {
+      const cached = localStorage.getItem('synergy_cached_feed');
+      return cached ? JSON.parse(cached) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+  const [ads, setAds] = useState<Ad[]>(() => {
+    try {
+      const cached = localStorage.getItem('synergy_cached_ads');
+      return cached ? JSON.parse(cached) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+  const [campaignAssets, setCampaignAssets] = useState<CampaignAsset[]>(() => {
+    try {
+      const cached = localStorage.getItem('synergy_cached_campaignAssets');
+      return cached ? JSON.parse(cached) : [];
+    } catch (e) {
+      return [];
+    }
+  });
 
   // Capture Referral Code from URL
   useEffect(() => {
@@ -184,19 +231,66 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       localStorage.setItem('synergy_referrer_code', ref.toUpperCase());
     }
   }, []);
-  const [onboardingSlides, setOnboardingSlides] = useState<OnboardingSlide[]>(INITIAL_ONBOARDING);
-  const [allOrders, setAllOrders] = useState<Order[]>([]);
+  const [onboardingSlides, setOnboardingSlides] = useState<OnboardingSlide[]>(() => {
+    try {
+      const cached = localStorage.getItem('synergy_cached_onboardingSlides');
+      return cached ? JSON.parse(cached) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+  const [allOrders, setAllOrders] = useState<Order[]>(() => {
+    try {
+      const cached = localStorage.getItem('synergy_cached_orders');
+      return cached ? JSON.parse(cached) : [];
+    } catch (e) {
+      return [];
+    }
+  });
   const [allTeam, setAllTeam] = useState<TeamMember[]>(INITIAL_TEAM);
-  const [allCommissions, setAllCommissions] = useState<CommissionTransaction[]>(INITIAL_COMMISSIONS);
-  const [allNotifications, setAllNotifications] = useState<Notification[]>([]);
-  const [systemSettings, setSystemSettings] = useState<SystemSettings>({
-      logo: null,
-      slipBackground: null,
-      contactLinks: { line: '', phone: '', email: '', website: '', terms: '', privacy: '' }
+  const [allCommissions, setAllCommissions] = useState<CommissionTransaction[]>(() => {
+    try {
+      const cached = localStorage.getItem('synergy_cached_commissions');
+      return cached ? JSON.parse(cached) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+  const [allNotifications, setAllNotifications] = useState<Notification[]>(() => {
+    try {
+      const cached = localStorage.getItem('synergy_cached_notifications');
+      return cached ? JSON.parse(cached) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+  const [systemSettings, setSystemSettings] = useState<SystemSettings>(() => {
+    try {
+      const cached = localStorage.getItem('synergy_cached_settings');
+      return cached ? JSON.parse(cached) : {
+        logo: null,
+        slipBackground: null,
+        contactLinks: { line: '', phone: '', email: '', website: '', terms: '', privacy: '' }
+      };
+    } catch (e) {
+      return {
+        logo: null,
+        slipBackground: null,
+        contactLinks: { line: '', phone: '', email: '', website: '', terms: '', privacy: '' }
+      };
+    }
   });
 
   const [activePromo, setActivePromo] = useState<Promotion | null>(null);
   const [isSearchActive, setIsSearchActive] = useState(false);
+  const [isQuotaExceeded, setIsQuotaExceeded] = useState(() => {
+    const timestamp = localStorage.getItem('synergy_quota_exceeded_timestamp');
+    if (timestamp) {
+      const diff = Date.now() - Number(timestamp);
+      return diff < QUOTA_RESET_TIME;
+    }
+    return false;
+  });
   const [currentToast, setCurrentToast] = useState<ToastMessage | null>(null);
   const [bottomNavHidden, setBottomNavHidden] = useState(false);
   
@@ -226,7 +320,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       return null;
     } catch (err) {
-      handleFirestoreError(err, OperationType.LIST, 'publicProfiles');
+      handleFirestoreError(err, OperationType.LIST, 'publicProfiles', setIsQuotaExceeded);
+      return null;
+    }
+  };
+
+  const getPublicProfileByCode = async (code: string): Promise<any | null> => {
+    try {
+      const q = query(collection(db, 'publicProfiles'), where('referralCode', '==', code));
+      const snapshot = await getDocs(q);
+      if (!snapshot.empty) {
+        return { id: snapshot.docs[0].id, ...snapshot.docs[0].data() };
+      }
+      return null;
+    } catch (err) {
+      handleFirestoreError(err, OperationType.LIST, 'publicProfiles', setIsQuotaExceeded);
       return null;
     }
   };
@@ -248,8 +356,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         teamSize: u.teamSize || 0
       };
       await setDoc(doc(db, 'publicProfiles', uid), cleanData(publicData), { merge: true });
+      
+      // Also sync phone and email maps for login/registration lookup
+      if (u.phone) {
+        const phone = u.phone.trim().replace(/[-\s]/g, '');
+        if (phone) {
+          await setDoc(doc(db, 'phoneMap', phone), { email: u.email });
+        }
+      }
+      if (u.email) {
+        await setDoc(doc(db, 'emailMap', u.email.toLowerCase()), { exists: true });
+      }
     } catch (err) {
-      handleFirestoreError(err, OperationType.UPDATE, `publicProfiles/${uid}`);
+      handleFirestoreError(err, OperationType.UPDATE, `publicProfiles/${uid}`, setIsQuotaExceeded);
     }
   };
 
@@ -258,10 +377,44 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     let unsubUser: (() => void) | null = null;
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
+        setIsLoggingIn(true);
+        
+        // Try to load user from cache first for immediate UI response
+        try {
+          const cachedUser = localStorage.getItem(`synergy_cached_user_${firebaseUser.uid}`);
+          if (cachedUser) {
+            setUser(JSON.parse(cachedUser));
+          }
+        } catch (e) {}
+
+        // Check for persistent quota state
+        const quotaTimestamp = localStorage.getItem('synergy_quota_exceeded_timestamp');
+        if (quotaTimestamp && (Date.now() - Number(quotaTimestamp) < QUOTA_RESET_TIME)) {
+          console.warn("Auth listener: Quota exceeded, relying on cache");
+          setIsLoggingIn(false);
+          return;
+        }
+
+        const lastUserFetch = Number(localStorage.getItem(`synergy_last_user_doc_fetch_${firebaseUser.uid}`) || 0);
+        const isCacheFresh = (Date.now() - lastUserFetch) < FETCH_COOLDOWN;
+        const hasCachedUser = localStorage.getItem(`synergy_cached_user_${firebaseUser.uid}`) !== null;
+
+        if (isCacheFresh && hasCachedUser && user) {
+          console.log("Auth listener: User cache is fresh, skipping real-time listener setup to save quota");
+          setIsLoggingIn(false);
+          return;
+        }
+
         // Setup real-time listener for the user document
-        unsubUser = onSnapshot(doc(db, 'users', firebaseUser.uid), (docSnap) => {
+        unsubUser = onSnapshot(doc(db, 'users', firebaseUser.uid), async (docSnap) => {
           if (docSnap.exists()) {
             const userData = docSnap.data() as User;
+            setUser(userData);
+            localStorage.setItem(`synergy_cached_user_${firebaseUser.uid}`, JSON.stringify(userData));
+            localStorage.setItem(`synergy_last_user_doc_fetch_${firebaseUser.uid}`, String(Date.now()));
+            syncPublicProfile(userData, firebaseUser.uid);
+            setIsLoggingIn(false);
+
             const isAdminUser = ADMIN_EMAILS.includes(firebaseUser.email?.toLowerCase() || "") || 
                                ADMIN_UIDS.includes(firebaseUser.uid);
             
@@ -288,6 +441,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             if (!userData.name && firebaseUser.displayName) {
               updates.name = firebaseUser.displayName;
             }
+
+            // Sync phone if it was just registered
+            const registeredPhone = localStorage.getItem('synergy_registering_phone');
+            if (registeredPhone && !userData.phone) {
+              updates.phone = registeredPhone;
+              localStorage.removeItem('synergy_registering_phone');
+            }
             
             // Sync Google social info if missing
             if (firebaseUser.providerData.some(p => p.providerId === 'google.com')) {
@@ -299,18 +459,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
             if (Object.keys(updates).length > 0) {
               updateDoc(docSnap.ref, updates).catch(err => {
-                console.error("Failed to auto-repair user data", err);
+                handleFirestoreError(err, OperationType.UPDATE, `users/${firebaseUser.uid}`, setIsQuotaExceeded);
               });
             }
-            
-            setUser(userData);
-            syncPublicProfile(userData, firebaseUser.uid);
-          }
-        }, (err) => handleFirestoreError(err, OperationType.GET, `users/${firebaseUser.uid}`));
-
-        try {
-          const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-          if (!userDoc.exists()) {
+          } else {
+            // User doesn't exist, handle registration...
             const isRegistering = localStorage.getItem('synergy_is_registering') === 'true';
             const isPrimaryAdmin = ADMIN_EMAILS.includes(firebaseUser.email?.toLowerCase() || "") || 
                                   ADMIN_UIDS.includes(firebaseUser.uid);
@@ -325,19 +478,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             
             localStorage.removeItem('synergy_is_registering');
 
-            // Check for duplicate email before creating a new document
-            if (firebaseUser.email) {
+            const emailFromProvider = firebaseUser.providerData.find(p => p.email)?.email;
+            const effectiveEmail = (firebaseUser.email || emailFromProvider || "").toLowerCase();
+
+            // Check if email already exists in Firestore for another user
+            if (effectiveEmail) {
               try {
-                const q = query(collection(db, 'users'), where('email', '==', firebaseUser.email.toLowerCase()), limit(1));
-                const querySnapshot = await getDocs(q);
-                if (!querySnapshot.empty) {
-                  console.warn(`Duplicate email detected for ${firebaseUser.email}. Existing UID: ${querySnapshot.docs[0].id}, New UID: ${firebaseUser.uid}`);
-                  // Note: In a real app, we might want to link these accounts or merge data.
-                  // For now, we proceed to create the document for the new UID to ensure the app works,
-                  // but we've logged the collision.
+                const qEmail = query(collection(db, 'users'), where('email', '==', effectiveEmail), limit(1));
+                const snapEmail = await getDocs(qEmail);
+                if (!snapEmail.empty) {
+                  // Email already exists in Firestore!
+                  await signOut(auth);
+                  showToast({ message: "This email is already associated with another account.", type: 'error' });
+                  setIsLoggingIn(false);
+                  return;
                 }
               } catch (err) {
-                console.error("Error checking for duplicate email", err);
+                handleFirestoreError(err, OperationType.LIST, 'users', setIsQuotaExceeded);
               }
             }
 
@@ -386,7 +543,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             let attempts = 0;
             while (!isUnique && attempts < 5) {
               try {
-                const q = query(collection(db, 'publicProfiles'), where('referralCode', '==', nextCode));
+                const q = query(collection(db, 'publicProfiles'), where('referralCode', '==', nextCode), limit(1));
                 const snap = await getDocs(q);
                 if (snap.empty) {
                   isUnique = true;
@@ -396,7 +553,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                   nextCode = `SYN${Math.floor(1000 + Math.random() * 8999)}`;
                 }
               } catch (err) {
-                handleFirestoreError(err, OperationType.LIST, 'publicProfiles');
+                handleFirestoreError(err, OperationType.LIST, 'publicProfiles', setIsQuotaExceeded);
               }
             }
 
@@ -412,18 +569,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 }
             }
 
-            const adminUid = await getUidByReferralCode('SYN001');
-
             const isAdminUser = ADMIN_EMAILS.includes(firebaseUser.email?.toLowerCase() || "") || 
                                ADMIN_UIDS.includes(firebaseUser.uid);
             
-            const emailFromProvider = firebaseUser.providerData.find(p => p.email)?.email;
-            const effectiveEmail = (firebaseUser.email || emailFromProvider || "").toLowerCase();
+            const registeredPhone = localStorage.getItem('synergy_registering_phone');
+            localStorage.removeItem('synergy_registering_phone');
 
             const newUser: User = {
               name: firebaseUser.displayName || (isAdminUser ? "Admin" : "Verified User"),
               uid: firebaseUser.uid,
               email: effectiveEmail,
+              phone: registeredPhone || "",
               tier: UserTier.STARTER,
               role: isAdminUser ? 'admin' : 'user',
               kycStatus: isAdminUser ? 'Verified' : 'Unverified',
@@ -439,13 +595,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               socials: { facebook: { connected: false, name: '' }, line: { connected: false, name: '' }, google: { connected: true, name: effectiveEmail } }
             };
             await setDoc(doc(db, 'users', firebaseUser.uid), cleanData(newUser));
-            // Listener will pick up the new user
+            
+            // Sync phone and email maps for new user
+            if (newUser.phone) {
+              const phone = newUser.phone.trim().replace(/[-\s]/g, '');
+              if (phone) {
+                await setDoc(doc(db, 'phoneMap', phone), { email: newUser.email });
+              }
+            }
+            if (newUser.email) {
+              await setDoc(doc(db, 'emailMap', newUser.email.toLowerCase()), { exists: true });
+            }
           }
-        } catch (err) {
-          handleFirestoreError(err, OperationType.GET, `users/${firebaseUser.uid}`);
-        }
+        }, (err) => {
+          handleFirestoreError(err, OperationType.GET, `users/${firebaseUser.uid}`, setIsQuotaExceeded);
+          setIsLoggingIn(false);
+        });
       } else {
         setUser(null);
+        setIsLoggingIn(false);
         if (unsubUser) unsubUser();
       }
       setIsAuthReady(true);
@@ -456,36 +624,50 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   }, []);
 
-  // Real-time Listeners (Optimized)
+  // Real-time Listeners
   useEffect(() => {
-    // Products and Feed stay real-time as they change frequently
-    const unsubProducts = onSnapshot(collection(db, 'products'), (snapshot) => {
+    if (isQuotaExceeded) return;
+
+    // Products
+    const unsubProducts = onSnapshot(query(collection(db, 'products'), limit(50)), (snapshot) => {
       const data = snapshot.docs.map(doc => {
         const docData = doc.data();
         return { ...docData, id: typeof docData.id === 'number' ? docData.id : (Number(doc.id) || doc.id) };
       }) as any;
       setProducts(data);
-    }, (err) => handleFirestoreError(err, OperationType.LIST, 'products'));
+      localStorage.setItem('synergy_cached_products', JSON.stringify(data));
+    }, (err) => handleFirestoreError(err, OperationType.LIST, 'products', setIsQuotaExceeded));
 
-    const unsubFeed = onSnapshot(collection(db, 'feed'), (snapshot) => {
+    // Feed
+    const unsubFeed = onSnapshot(query(collection(db, 'feed'), limit(30)), (snapshot) => {
       const data = snapshot.docs.map(doc => {
         const docData = doc.data();
         return { ...docData, id: typeof docData.id === 'number' ? docData.id : (Number(doc.id) || doc.id) };
       }) as any;
       setFeed(data);
-    }, (err) => handleFirestoreError(err, OperationType.LIST, 'feed'));
+      localStorage.setItem('synergy_cached_feed', JSON.stringify(data));
+    }, (err) => handleFirestoreError(err, OperationType.LIST, 'feed', setIsQuotaExceeded));
 
-    const unsubAds = onSnapshot(collection(db, 'ads'), (snapshot) => {
-      setAds(snapshot.docs.map(doc => ({ ...doc.data(), id: Number(doc.id) || doc.id }) as Ad));
-    }, (err) => handleFirestoreError(err, OperationType.LIST, 'ads'));
+    // Ads
+    const unsubAds = onSnapshot(query(collection(db, 'ads'), limit(10)), (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ ...doc.data(), id: Number(doc.id) || doc.id }) as Ad);
+      setAds(data);
+      localStorage.setItem('synergy_cached_ads', JSON.stringify(data));
+    }, (err) => handleFirestoreError(err, OperationType.LIST, 'ads', setIsQuotaExceeded));
 
-    const unsubAssets = onSnapshot(collection(db, 'campaignAssets'), (snapshot) => {
-      setCampaignAssets(snapshot.docs.map(doc => ({ ...doc.data(), id: Number(doc.id) || doc.id }) as CampaignAsset));
-    }, (err) => handleFirestoreError(err, OperationType.LIST, 'campaignAssets'));
+    // Campaign Assets
+    const unsubAssets = onSnapshot(query(collection(db, 'campaignAssets'), limit(20)), (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ ...doc.data(), id: Number(doc.id) || doc.id }) as CampaignAsset);
+      setCampaignAssets(data);
+      localStorage.setItem('synergy_cached_campaignAssets', JSON.stringify(data));
+    }, (err) => handleFirestoreError(err, OperationType.LIST, 'campaignAssets', setIsQuotaExceeded));
 
-    const unsubOnboarding = onSnapshot(collection(db, 'onboardingSlides'), (snapshot) => {
-      setOnboardingSlides(snapshot.docs.map(doc => ({ ...doc.data(), id: Number(doc.id) || doc.id }) as OnboardingSlide));
-    }, (err) => handleFirestoreError(err, OperationType.LIST, 'onboardingSlides'));
+    // Onboarding Slides
+    const unsubOnboarding = onSnapshot(query(collection(db, 'onboardingSlides'), limit(10)), (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ ...doc.data(), id: Number(doc.id) || doc.id }) as OnboardingSlide);
+      setOnboardingSlides(data);
+      localStorage.setItem('synergy_cached_onboardingSlides', JSON.stringify(data));
+    }, (err) => handleFirestoreError(err, OperationType.LIST, 'onboardingSlides', setIsQuotaExceeded));
 
     // Realtime Database: Live Sales Feed
     const salesRef = rtdbQuery(ref(rtdb, 'liveSales'), limitToLast(10));
@@ -500,15 +682,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     });
 
-    const unsubSettings = onSnapshot(doc(db, 'systemSettings', 'current'), (doc) => {
-      if (doc.exists()) {
-          const data = doc.data() as SystemSettings;
-          setSystemSettings({
+    // System Settings
+    const unsubSettings = onSnapshot(doc(db, 'systemSettings', 'current'), (docSnap) => {
+      if (docSnap.exists()) {
+          const data = docSnap.data() as SystemSettings;
+          const settings = {
               ...data,
               contactLinks: data.contactLinks || { line: '', phone: '', email: '', website: '', terms: '', privacy: '' }
-          });
+          };
+          setSystemSettings(settings);
+          localStorage.setItem('synergy_cached_settings', JSON.stringify(settings));
       }
-    }, (err) => handleFirestoreError(err, OperationType.GET, 'systemSettings/current'));
+    }, (err) => handleFirestoreError(err, OperationType.GET, 'systemSettings/current', setIsQuotaExceeded));
 
     return () => {
       unsubProducts();
@@ -519,113 +704,95 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       unsubSales();
       unsubSettings();
     };
-  }, []);
+  }, [isQuotaExceeded]);
 
   // User-specific Listeners
   useEffect(() => {
-    if (!auth.currentUser || !user) {
-      setAllOrders([]);
-      setAllCommissions([]);
-      setAllNotifications([]);
+    if (!auth.currentUser || !user || isQuotaExceeded) {
+      if (!auth.currentUser || !user) {
+        setAllOrders([]);
+        setAllCommissions([]);
+        setAllNotifications([]);
+        setAllTeam([]);
+      }
       return;
     }
 
     const ordersRef = collection(db, 'orders');
     const qOrders = user.role === 'admin' 
-      ? query(ordersRef) 
-      : query(ordersRef, where('userId', '==', auth.currentUser.uid));
+      ? query(ordersRef, limit(100)) 
+      : query(ordersRef, where('userId', '==', auth.currentUser.uid), limit(50));
 
     const unsubOrders = onSnapshot(qOrders, (snapshot) => {
-      setAllOrders(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as any);
-    }, (err) => handleFirestoreError(err, OperationType.LIST, 'orders'));
+      const data = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as any;
+      setAllOrders(data);
+      localStorage.setItem('synergy_cached_orders', JSON.stringify(data));
+    }, (err) => handleFirestoreError(err, OperationType.LIST, 'orders', setIsQuotaExceeded));
 
     const commissionsRef = collection(db, 'commissions');
     const qCommissions = user.role === 'admin'
-      ? query(commissionsRef)
-      : query(commissionsRef, where('userId', '==', auth.currentUser.uid));
+      ? query(commissionsRef, limit(100))
+      : query(commissionsRef, where('userId', '==', auth.currentUser.uid), limit(50));
 
     const unsubCommissions = onSnapshot(qCommissions, (snapshot) => {
-      setAllCommissions(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as any);
-    }, (err) => handleFirestoreError(err, OperationType.LIST, 'commissions'));
+      const data = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as any;
+      setAllCommissions(data);
+      localStorage.setItem('synergy_cached_commissions', JSON.stringify(data));
+    }, (err) => handleFirestoreError(err, OperationType.LIST, 'commissions', setIsQuotaExceeded));
 
     const notificationsRef = collection(db, 'notifications');
     const qNotifications = user.role === 'admin'
-      ? query(notificationsRef)
-      : query(notificationsRef, where('userId', 'in', [auth.currentUser.uid, 'global']));
+      ? query(notificationsRef, limit(100))
+      : query(notificationsRef, where('userId', 'in', [auth.currentUser.uid, 'global']), limit(50));
 
     const unsubNotifications = onSnapshot(qNotifications, (snapshot) => {
-      setAllNotifications(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as any);
-    }, (err) => handleFirestoreError(err, OperationType.LIST, 'notifications'));
+      const data = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as any;
+      setAllNotifications(data);
+      localStorage.setItem('synergy_cached_notifications', JSON.stringify(data));
+    }, (err) => handleFirestoreError(err, OperationType.LIST, 'notifications', setIsQuotaExceeded));
 
     const usersRef = collection(db, 'users');
-    let unsubUsers: (() => void) | null = null;
-
+    let qTeam;
     if (user.role === 'admin') {
-      const qAllUsers = query(usersRef, limit(1000)); // Add a reasonable limit
-      getDocs(qAllUsers).then(snapshot => {
-        const usersData = snapshot.docs.map(doc => {
-          const d = doc.data();
-          return {
-            id: doc.id,
-            referralCode: d.referralCode,
-            uplineId: d.uplineId || '',
-            uplinePath: d.uplinePath || [],
-            name: d.name,
-            tier: d.tier,
-            avatar: d.avatar,
-            totalSales: d.accumulatedSales,
-            teamSize: d.teamSize || 0,
-            accumulatedIncome: d.accumulatedIncome || 0,
-            joinedDate: d.joinedDate || '2024-01-01',
-            relationship: d.uplineId === auth.currentUser?.uid ? 'Direct' : 'Indirect',
-            phone: d.phone,
-            lineId: d.lineId,
-            email: d.email,
-            idCardImage: d.idCardImage,
-            kycStatus: d.kycStatus,
-            role: d.role || 'user'
-          };
-        }) as any;
-        setAllTeam(usersData);
-      }).catch((err) => handleFirestoreError(err, OperationType.LIST, 'users'));
+      qTeam = query(usersRef, limit(100));
     } else {
-      // Fetch all users who have the current user in their uplinePath
-      const qUsers = query(usersRef, where('uplinePath', 'array-contains', auth.currentUser.uid));
-      unsubUsers = onSnapshot(qUsers, (snapshot) => {
-        const usersData = snapshot.docs.map(doc => {
-          const d = doc.data();
-          return {
-            id: doc.id,
-            referralCode: d.referralCode,
-            uplineId: d.uplineId || '',
-            uplinePath: d.uplinePath || [],
-            name: d.name,
-            tier: d.tier,
-            avatar: d.avatar,
-            totalSales: d.accumulatedSales,
-            teamSize: d.teamSize || 0,
-            accumulatedIncome: d.accumulatedIncome || 0,
-            joinedDate: d.joinedDate || '2024-01-01',
-            relationship: d.uplineId === auth.currentUser?.uid ? 'Direct' : 'Indirect',
-            phone: d.phone,
-            lineId: d.lineId,
-            email: d.email,
-            idCardImage: d.idCardImage,
-            kycStatus: d.kycStatus,
-            role: d.role || 'user'
-          };
-        }) as any;
-        setAllTeam(usersData);
-      }, (err) => handleFirestoreError(err, OperationType.LIST, 'users'));
+      qTeam = query(usersRef, where('uplinePath', 'array-contains', auth.currentUser.uid), limit(500));
     }
+
+    const unsubTeam = onSnapshot(qTeam, (snapshot) => {
+      const usersData = snapshot.docs.map(doc => {
+        const d = doc.data();
+        return {
+          id: doc.id,
+          referralCode: d.referralCode,
+          uplineId: d.uplineId || '',
+          uplinePath: d.uplinePath || [],
+          name: d.name,
+          tier: d.tier,
+          avatar: d.avatar,
+          totalSales: d.accumulatedSales,
+          teamSize: d.teamSize || 0,
+          accumulatedIncome: d.accumulatedIncome || 0,
+          joinedDate: d.joinedDate || '2024-01-01',
+          relationship: d.uplineId === auth.currentUser?.uid ? 'Direct' : 'Indirect',
+          phone: d.phone,
+          lineId: d.lineId,
+          email: d.email,
+          idCardImage: d.idCardImage,
+          kycStatus: d.kycStatus,
+          role: d.role || 'user'
+        };
+      }) as any;
+      setAllTeam(usersData);
+    }, (err) => handleFirestoreError(err, OperationType.LIST, 'users', setIsQuotaExceeded));
 
     return () => {
       unsubOrders();
       unsubCommissions();
       unsubNotifications();
-      if (unsubUsers) unsubUsers();
+      unsubTeam();
     };
-  }, [user]);
+  }, [user?.uid, user?.role, isQuotaExceeded]);
 
   useEffect(() => {
     const newSocket = io(window.location.origin);
@@ -652,22 +819,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     const handleOrderVerified = (orderId: string) => {
-      showToast({ message: `Order ${orderId} has been verified by admin!`, type: 'success' });
       setAllOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'To Ship' } : o));
     };
 
     const handleCommissionNew = (data: any) => {
-      showToast({ message: `You earned a new commission: ฿${data.amount}!`, type: 'success' });
+      // Redundant with handleNotificationNew
     };
 
     const handleNotificationNew = (data: any) => {
       if (notificationsEnabled) {
-        showToast({ message: data.title, type: 'info' });
+        showToast({ 
+          message: data.title, 
+          description: data.message, 
+          type: 'info',
+          relatedId: data.id 
+        });
       }
     };
 
     const handlePostApproved = (postId: number) => {
-      showToast({ message: `Your post has been approved and is now live!`, type: 'success' });
       setFeed(prev => prev.map(p => p.id === postId ? { ...p, status: 'Approved' } : p));
     };
 
@@ -723,8 +893,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setReferrer(null);
       return;
     }
-    const q = query(collection(db, 'publicProfiles'), where('referralCode', '==', user.referrerCode));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    const q = query(collection(db, 'publicProfiles'), where('referralCode', '==', user.referrerCode), limit(1));
+    getDocs(q).then((snapshot) => {
       if (!snapshot.empty) {
         const d = snapshot.docs[0].data();
         setReferrer({
@@ -738,8 +908,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       } else {
         setReferrer(null);
       }
-    }, (err) => handleFirestoreError(err, OperationType.GET, `publicProfiles/referrer/${user.referrerCode}`));
-    return () => unsubscribe();
+    }).catch((err) => handleFirestoreError(err, OperationType.GET, `publicProfiles/referrer/${user.referrerCode}`, setIsQuotaExceeded));
+    return () => {};
   }, [user?.referrerCode]);
 
   const addresses = user?.addresses || [];
@@ -785,8 +955,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return UserTier.STARTER; 
   };
 
-  const login = async (email?: string, password?: string, isRegister: boolean = false) => {
-    if (isLoggingIn) return;
+  const login = async (emailOrPhone?: string, password?: string, isRegister: boolean = false): Promise<boolean> => {
+    if (isLoggingIn) return false;
     setIsLoggingIn(true);
     if (isRegister) {
       localStorage.setItem('synergy_is_registering', 'true');
@@ -794,11 +964,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       localStorage.removeItem('synergy_is_registering');
     }
     try {
-      if (email && password) {
+      if (emailOrPhone && password) {
+        let email = emailOrPhone.trim().toLowerCase();
+        // Check if it's a phone number (simple check: doesn't contain @)
+        if (!email.includes('@')) {
+          const phone = emailOrPhone.trim().replace(/[-\s]/g, '');
+          try {
+            // Use phoneMap for unauthenticated lookup (standard way to avoid broad list permissions)
+            const phoneMapDoc = await getDoc(doc(db, 'phoneMap', phone));
+            if (phoneMapDoc.exists()) {
+              email = phoneMapDoc.data().email;
+            } else {
+              // No fallback to query/list as it will fail for unauthenticated users
+              showToast({ message: "Phone number not found. Please use email or register.", type: 'error' });
+              setIsLoggingIn(false);
+              return false;
+            }
+          } catch (err) {
+            console.error("Phone lookup failed:", err);
+            showToast({ message: "Login failed. Please check your network or use email.", type: 'error' });
+            setIsLoggingIn(false);
+            return false;
+          }
+        }
         await signInWithEmailAndPassword(auth, email, password);
+        return true;
       } else {
         const provider = new GoogleAuthProvider();
         await signInWithPopup(auth, provider);
+        return true;
       }
     } catch (error: any) {
       if (error.code === 'auth/popup-closed-by-user') {
@@ -809,16 +1003,42 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         console.error("Login failed", error);
         showToast({ message: "Login failed. Please try again.", type: 'error' });
       }
+      return false;
     } finally {
       setIsLoggingIn(false);
     }
   };
 
-  const register = async (email: string, password: string, username: string) => {
+  const register = async (emailOrPhone: string, password: string, username: string) => {
     if (isLoggingIn) return;
     setIsLoggingIn(true);
     localStorage.setItem('synergy_is_registering', 'true');
     try {
+      let email = emailOrPhone.trim().toLowerCase();
+      let phone = "";
+      
+      if (!email.includes('@')) {
+        phone = emailOrPhone.trim().replace(/[-\s]/g, '');
+        email = `${phone}@synergy.com`; // Generate dummy email for Firebase Auth
+        localStorage.setItem('synergy_registering_phone', phone);
+      }
+
+      // Check if email already exists in Firestore using emailMap (safer than query)
+      try {
+        const emailMapDoc = await getDoc(doc(db, 'emailMap', email.toLowerCase()));
+        if (emailMapDoc.exists()) {
+          showToast({ message: "Email or phone already in use.", type: 'error' });
+          setIsLoggingIn(false);
+          return;
+        }
+      } catch (err) {
+        // No fallback to query/list as it will fail for unauthenticated users
+        console.error("Email check failed:", err);
+        showToast({ message: "Registration check failed. Please try again.", type: 'error' });
+        setIsLoggingIn(false);
+        return;
+      }
+
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(userCredential.user, { displayName: username });
       
@@ -827,7 +1047,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch (error: any) {
       console.error("Registration failed", error);
       if (error.code === 'auth/email-already-in-use') {
-        showToast({ message: "Email already in use.", type: 'error' });
+        showToast({ message: "Email or phone already in use.", type: 'error' });
       } else {
         showToast({ message: "Registration failed. Please try again.", type: 'error' });
       }
@@ -1189,13 +1409,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                     date: "Just now",
                     type: 'promo',
                     read: false,
-                    relatedId: orderId,
-                    relatedType: 'order'
+                    relatedId: commissionId,
+                    relatedType: 'commission'
                 }));
 
                 if (socket) {
                     socket.emit("commission:new", { userId: currentUplineId, amount: commissionAmount });
-                    socket.emit("notification:new", { userId: currentUplineId, title: `New ${type} Commission! ฿${commissionAmount}` });
+                    socket.emit("notification:new", { 
+                        userId: currentUplineId, 
+                        title: `New ${type} Commission! ฿${commissionAmount}`,
+                        message: `You earned a commission from ${userData.name}'s order.`,
+                        id: notifId
+                    });
                 }
             }
         });
@@ -1243,12 +1468,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           socket.emit("commission:new", { userId: socketData.uplineId, amount: commissionAmount });
           socket.emit("notification:new", { userId: socketData.uplineId, title: "New Commission Pending! ฿" + commissionAmount });
         }
-        socket.emit("notification:new", { userId: auth.currentUser!.uid, title: "Order Placed", message: `Order ${newOrder.id} is pending.` });
+        // Use the notifId from above if we can, but it's inside transaction. 
+        // Let's just emit it.
+        socket.emit("notification:new", { 
+            userId: auth.currentUser!.uid, 
+            title: "Order Placed", 
+            message: `Order ${newOrder.id} is pending.`,
+            id: Date.now().toString() // Close enough
+        });
       }
       
       setCart([]);
       setAppliedCoupon(null);
-      showToast({ message: "Order placed successfully!", type: 'success' });
+      // showToast removed to avoid redundancy with notification:new
       window.location.hash = '#/account';
     } catch (err) {
       handleFirestoreError(err, OperationType.WRITE, 'checkout');
@@ -1284,6 +1516,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
 
         await setDoc(orderRef, { status, timeline: updatedTimeline, returnReason: reason || o.returnReason || null }, { merge: true });
+
+        // Notify user of status change
+        const notifId = Date.now().toString();
+        const statusMsg = `Your order ${orderId} status has been updated to: ${status}`;
+        await setDoc(doc(db, 'notifications', notifId), cleanData({
+            userId: o.userId,
+            title: "Order Update",
+            message: statusMsg,
+            date: "Just now",
+            type: 'order',
+            read: false,
+            relatedId: orderId,
+            relatedType: 'order'
+        }));
+
+        if (socket) {
+            socket.emit("notification:new", {
+                userId: o.userId,
+                title: "Order Update",
+                message: statusMsg,
+                id: notifId
+            });
+        }
       } catch (err) {
         handleFirestoreError(err, OperationType.UPDATE, `orders/${orderId}`);
       }
@@ -1318,7 +1573,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                       message: `Commission of ฿${commissionTx.amount} for Order ${orderId} has been deducted due to product return.`,
                       date: "Just now",
                       type: 'system',
-                      read: false
+                      read: false,
+                      relatedId: commissionDoc.id,
+                      relatedType: 'commission'
                   });
               });
           }
@@ -1352,15 +1609,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             
             transaction.update(commissionDoc.ref, { status: 'Paid' });
             
+            const notifId = (Date.now() + 1).toString();
             if (socket) {
               socket.emit("notification:new", { 
                 userId: tx.userId, 
                 title: "Commission Settled! ฿" + tx.amount,
-                message: `Your commission for order ${orderId} has been moved to available balance.`
+                message: `Your commission for order ${orderId} has been moved to available balance.`,
+                id: notifId
               });
             }
 
-            const notifId = (Date.now() + 1).toString();
             transaction.set(doc(db, 'notifications', notifId), cleanData({
               userId: tx.userId,
               title: "Commission Settled! ฿" + tx.amount,
@@ -1368,7 +1626,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               date: "Just now",
               type: 'promo',
               read: false,
-              relatedId: tx.id,
+              relatedId: commissionDoc.id,
               relatedType: 'commission'
             }));
           });
@@ -1479,6 +1737,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const updateUserProfile = async (data: Partial<User>) => { 
     if (!auth.currentUser || !user) return;
     try {
+      // If email is being updated, check for uniqueness
+      if (data.email && data.email.toLowerCase() !== user.email?.toLowerCase()) {
+        const qEmail = query(collection(db, 'users'), where('email', '==', data.email.toLowerCase()), limit(1));
+        const snapEmail = await getDocs(qEmail);
+        if (!snapEmail.empty) {
+          showToast({ message: "This email is already associated with another account.", type: 'error' });
+          return;
+        }
+      }
+
       const cleaned = cleanData(data);
       if (!checkDocSize(cleaned)) return;
       const updatedUser = { ...user, ...data };
@@ -1713,6 +1981,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!auth.currentUser) return;
     try {
       await updateDoc(doc(db, 'users', auth.currentUser.uid), { [type]: value });
+      
+      // If it's a password, also try to update Firebase Auth password
+      if (type === 'password') {
+        try {
+          await updatePassword(auth.currentUser, value);
+        } catch (authErr: any) {
+          console.warn("Could not update Firebase Auth password. This is expected for Google users or if re-authentication is needed.", authErr);
+        }
+      }
     } catch (err) {
       handleFirestoreError(err, OperationType.UPDATE, `users/${auth.currentUser.uid}`);
     }
@@ -1940,7 +2217,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const updateFeedStatus = async (postId: number, status: 'Approved' | 'Pending') => { 
     try {
       await setDoc(doc(db, 'feed', String(postId)), { status }, { merge: true });
+      setFeed(prev => prev.map(p => p.id === postId ? { ...p, status } : p));
       if (status === 'Approved' && socket) {
+        const postSnap = await getDoc(doc(db, 'feed', String(postId)));
+        if (postSnap.exists()) {
+            const post = postSnap.data();
+            const notifId = Date.now().toString();
+            await setDoc(doc(db, 'notifications', notifId), cleanData({
+                userId: post.userId,
+                title: "Post Approved!",
+                message: "Your post has been approved and is now live in the feed.",
+                date: "Just now",
+                type: 'promo',
+                read: false,
+                relatedId: String(postId),
+                relatedType: 'feed'
+            }));
+            socket.emit("notification:new", {
+                userId: post.userId,
+                title: "Post Approved!",
+                message: "Your post has been approved and is now live in the feed.",
+                id: notifId
+            });
+        }
         socket.emit("admin:approve_post", postId);
       }
     } catch (err) {
@@ -1951,6 +2250,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const deleteFeedPost = async (postId: number) => {
     try {
       await deleteDoc(doc(db, 'feed', String(postId)));
+      setFeed(prev => prev.filter(p => p.id !== postId));
     } catch (err) {
       handleFirestoreError(err, OperationType.DELETE, `feed/${postId}`);
     }
@@ -1961,6 +2261,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const cleaned = cleanData(data);
       if (!checkDocSize(cleaned)) return;
       await setDoc(doc(db, 'feed', String(postId)), cleaned, { merge: true });
+      setFeed(prev => prev.map(p => p.id === postId ? { ...p, ...data } : p));
     } catch (err) {
       handleFirestoreError(err, OperationType.UPDATE, `feed/${postId}`);
     }
@@ -2005,6 +2306,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const updateUserAdminProfile = async (userId: string, data: Partial<User>) => {
     if (user?.role !== 'admin') return;
     try {
+      // If email is being updated, check for uniqueness
+      if (data.email) {
+        const qEmail = query(collection(db, 'users'), where('email', '==', data.email.toLowerCase()), limit(1));
+        const snapEmail = await getDocs(qEmail);
+        if (!snapEmail.empty && snapEmail.docs[0].id !== userId) {
+          showToast({ message: "This email is already associated with another account.", type: 'error' });
+          return;
+        }
+      }
+
       const cleaned = cleanData(data);
       await setDoc(doc(db, 'users', userId), cleaned, { merge: true });
       // Also update public profile if relevant fields are changed
@@ -2100,6 +2411,31 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch (err) {
       console.error("Factory reset failed", err);
       showToast({ message: "Failed to reset system", type: "error" });
+    }
+  };
+
+  const healPhoneMap = async () => {
+    if (!user || user.role !== 'admin') return;
+    try {
+      const usersSnap = await getDocs(collection(db, 'users'));
+      let count = 0;
+      for (const d of usersSnap.docs) {
+        const u = d.data() as User;
+        if (u.phone) {
+          const phone = u.phone.trim().replace(/[-\s]/g, '');
+          if (phone) {
+            await setDoc(doc(db, 'phoneMap', phone), { email: u.email });
+            count++;
+          }
+        }
+        if (u.email) {
+          await setDoc(doc(db, 'emailMap', u.email.toLowerCase()), { exists: true });
+        }
+      }
+      showToast({ message: `Healed ${count} phone/email mappings`, type: 'success' });
+    } catch (err) {
+      console.error("Heal failed", err);
+      showToast({ message: "Heal failed", type: 'error' });
     }
   };
 
@@ -2228,12 +2564,144 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       showToast({ message: `Healed ${healedCount} upline paths`, type: "success" });
     } catch (err) {
       console.error("Heal upline paths failed", err);
+      handleFirestoreError(err, OperationType.LIST, 'users', setIsQuotaExceeded);
       showToast({ message: "Failed to heal upline paths", type: "error" });
     }
   };
 
+  const [lastManualRefresh, setLastManualRefresh] = useState(0);
+
+  const refreshAllData = async () => {
+    if (Date.now() - lastManualRefresh < 60000) { // 1 minute cooldown
+      showToast({ message: "Please wait a minute before refreshing again.", type: "info" });
+      return;
+    }
+    setLastManualRefresh(Date.now());
+
+    try {
+      showToast({ message: "Refreshing data...", type: "info" });
+      
+      // Refresh Products
+      const productsSnap = await getDocs(query(collection(db, 'products'), limit(50)));
+      const productsData = productsSnap.docs.map(doc => ({ ...doc.data(), id: typeof doc.data().id === 'number' ? doc.data().id : (Number(doc.id) || doc.id) })) as any;
+      setProducts(productsData);
+      localStorage.setItem('synergy_cached_products', JSON.stringify(productsData));
+
+      // Refresh Feed
+      const feedSnap = await getDocs(query(collection(db, 'feed'), limit(30)));
+      const feedData = feedSnap.docs.map(doc => ({ ...doc.data(), id: typeof doc.data().id === 'number' ? doc.data().id : (Number(doc.id) || doc.id) })) as any;
+      setFeed(feedData);
+      localStorage.setItem('synergy_cached_feed', JSON.stringify(feedData));
+
+      // Refresh Ads
+      const adsSnap = await getDocs(query(collection(db, 'ads'), limit(10)));
+      const adsData = adsSnap.docs.map(doc => ({ ...doc.data(), id: Number(doc.id) || doc.id })) as Ad[];
+      setAds(adsData);
+      localStorage.setItem('synergy_cached_ads', JSON.stringify(adsData));
+
+      // Refresh Assets
+      const assetsSnap = await getDocs(query(collection(db, 'campaignAssets'), limit(20)));
+      const assetsData = assetsSnap.docs.map(doc => ({ ...doc.data(), id: Number(doc.id) || doc.id })) as CampaignAsset[];
+      setCampaignAssets(assetsData);
+      localStorage.setItem('synergy_cached_campaignAssets', JSON.stringify(assetsData));
+
+      // Refresh Onboarding
+      const onboardingSnap = await getDocs(query(collection(db, 'onboardingSlides'), limit(10)));
+      const onboardingData = onboardingSnap.docs.map(doc => ({ ...doc.data(), id: Number(doc.id) || doc.id })) as OnboardingSlide[];
+      setOnboardingSlides(onboardingData);
+      localStorage.setItem('synergy_cached_onboardingSlides', JSON.stringify(onboardingData));
+
+      // Refresh System Settings
+      const settingsSnap = await getDoc(doc(db, 'systemSettings', 'current'));
+      if (settingsSnap.exists()) {
+        const data = settingsSnap.data() as SystemSettings;
+        const settings = {
+          ...data,
+          contactLinks: data.contactLinks || { line: '', phone: '', email: '', website: '', terms: '', privacy: '' }
+        };
+        setSystemSettings(settings);
+        localStorage.setItem('synergy_cached_settings', JSON.stringify(settings));
+      }
+
+      // Refresh User-specific data if logged in
+      if (auth.currentUser && user) {
+        // Refresh User Document
+        const userSnap = await getDoc(doc(db, 'users', auth.currentUser.uid));
+        if (userSnap.exists()) {
+          const userData = userSnap.data() as User;
+          setUser(userData);
+          localStorage.setItem(`synergy_cached_user_${auth.currentUser.uid}`, JSON.stringify(userData));
+          localStorage.setItem(`synergy_last_user_doc_fetch_${auth.currentUser.uid}`, String(Date.now()));
+        }
+
+        const ordersRef = collection(db, 'orders');
+        const qOrders = user.role === 'admin' ? query(ordersRef, limit(100)) : query(ordersRef, where('userId', '==', auth.currentUser.uid), limit(50));
+        const ordersSnap = await getDocs(qOrders);
+        const ordersData = ordersSnap.docs.map(doc => ({ ...doc.data(), id: doc.id })) as any;
+        setAllOrders(ordersData);
+        localStorage.setItem('synergy_cached_orders', JSON.stringify(ordersData));
+
+        const commissionsRef = collection(db, 'commissions');
+        const qCommissions = user.role === 'admin' ? query(commissionsRef, limit(100)) : query(commissionsRef, where('userId', '==', auth.currentUser.uid), limit(50));
+        const commissionsSnap = await getDocs(qCommissions);
+        const commissionsData = commissionsSnap.docs.map(doc => ({ ...doc.data(), id: doc.id })) as any;
+        setAllCommissions(commissionsData);
+        localStorage.setItem('synergy_cached_commissions', JSON.stringify(commissionsData));
+
+        const notificationsRef = collection(db, 'notifications');
+        const qNotifications = user.role === 'admin' ? query(notificationsRef, limit(100)) : query(notificationsRef, where('userId', 'in', [auth.currentUser.uid, 'global']), limit(50));
+        const notificationsSnap = await getDocs(qNotifications);
+        const notificationsData = notificationsSnap.docs.map(doc => ({ ...doc.data(), id: doc.id })) as any;
+        setAllNotifications(notificationsData);
+        localStorage.setItem('synergy_cached_notifications', JSON.stringify(notificationsData));
+
+        // Refresh Team
+        const usersRef = collection(db, 'users');
+        const qTeam = user.role === 'admin' ? query(usersRef, limit(100)) : query(usersRef, where('uplinePath', 'array-contains', auth.currentUser.uid), limit(200));
+        const teamSnap = await getDocs(qTeam);
+        const teamData = teamSnap.docs.map(doc => {
+          const d = doc.data();
+          return {
+            id: doc.id,
+            referralCode: d.referralCode,
+            uplineId: d.uplineId || '',
+            uplinePath: d.uplinePath || [],
+            name: d.name,
+            tier: d.tier,
+            avatar: d.avatar,
+            totalSales: d.accumulatedSales,
+            teamSize: d.teamSize || 0,
+            accumulatedIncome: d.accumulatedIncome || 0,
+            joinedDate: d.joinedDate || '2024-01-01',
+            relationship: d.uplineId === auth.currentUser?.uid ? 'Direct' : 'Indirect',
+            phone: d.phone,
+            lineId: d.lineId,
+            email: d.email,
+            idCardImage: d.idCardImage,
+            kycStatus: d.kycStatus,
+            role: d.role || 'user'
+          };
+        }) as any;
+        setAllTeam(teamData);
+      }
+
+      showToast({ message: "Data refreshed successfully", type: "success" });
+      setIsQuotaExceeded(false);
+      localStorage.removeItem('synergy_quota_exceeded_timestamp');
+    } catch (err) {
+      console.error("Refresh failed", err);
+      handleFirestoreError(err, OperationType.GET, 'all_data', setIsQuotaExceeded);
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      const isQuota = errorMsg.includes('Quota limit exceeded') || errorMsg.includes('quota-exceeded');
+      showToast({ 
+        message: isQuota ? "Refresh failed: Daily quota still exceeded. Please try again later." : "Refresh failed. Please check your connection.", 
+        type: "error" 
+      });
+    }
+  };
+
   const contextValue: AppContextType = {
-    user, isLoggedIn, cart, products, feed, ads, campaignAssets, onboardingSlides, team: userTeam, referrer, commissions: userCommissions, orders: userOrders, addresses, selectedAddressId, paymentMethod, appliedCoupon, notifications: userNotifications, activePromo, systemSettings, isSearchActive, setIsSearchActive, liveSales, pendingLevelUp, dismissLevelUp, isSecurityUnlocked, setIsSecurityUnlocked, notificationsEnabled, setNotificationsEnabled, currentToast, showToast, bottomNavHidden, setBottomNavHidden, dismissToast, allOrders, allTeamMembers: allTeam, allCommissions, bankAccounts, selectedBankId, savedCards, selectedCardId, kycStatus, language, setLanguage, fontSize, setFontSize, t, login, register, logout, addToCart, removeFromCart, updateCartQuantity, checkout, calculateCommission, getNextTierTarget, getCommissionRate, addAddress, updateAddress, removeAddress, selectAddress, setPaymentMethod, applyCoupon, removeCoupon, getCartTotals, addBankAccount, removeBankAccount, selectBank, addCreditCard, removeCreditCard, selectCreditCard, updateKycStatus, updateUserKycStatus, updateUserProfile, updateUserAdminProfile, updateUserRole, withdrawFunds, markNotificationAsRead, toggleFeedLike, addFeedComment, createPost, addReview, updateUserSocials, updateUserSecurity, addReferrer, updateOrderAddress, updateProduct, deleteProduct, addProduct, updateAd, deleteAd, addAd, updateCampaignAsset, deleteCampaignAsset, addCampaignAsset, updateOnboardingSlide, deleteOnboardingSlide, addOnboardingSlide, updateOrderStatus, deleteOrder, updateCommissionStatus, deleteCommission, deleteTeamMember, updateMemberTier, updateFeedStatus, deleteFeedPost, updateFeedPost, broadcastPromotion, dismissPromotion, updateSystemSettings, updateUserReferralCode, factoryReset, healReferralCodes, healTeamSizes, healUplinePaths, toggleFavorite, isFavorite
+    user, isLoggedIn, cart, products, feed, ads, campaignAssets, onboardingSlides, team: userTeam, referrer, commissions: userCommissions, orders: userOrders, addresses, selectedAddressId, paymentMethod, appliedCoupon, notifications: userNotifications, activePromo, systemSettings, isSearchActive, setIsSearchActive, isQuotaExceeded, liveSales, pendingLevelUp, dismissLevelUp, isSecurityUnlocked, setIsSecurityUnlocked, notificationsEnabled, setNotificationsEnabled, currentToast, showToast, bottomNavHidden, setBottomNavHidden, dismissToast, allOrders, allTeamMembers: allTeam, allCommissions, bankAccounts, selectedBankId, savedCards, selectedCardId, kycStatus, language, setLanguage, fontSize, setFontSize, t, isLoggingIn, login, register, logout, addToCart, removeFromCart, updateCartQuantity, checkout, calculateCommission, getNextTierTarget, getCommissionRate, addAddress, updateAddress, removeAddress, selectAddress, setPaymentMethod, applyCoupon, removeCoupon, getCartTotals, addBankAccount, removeBankAccount, selectBank, addCreditCard, removeCreditCard, selectCreditCard, updateKycStatus, updateUserKycStatus, updateUserProfile, updateUserAdminProfile, updateUserRole, withdrawFunds, markNotificationAsRead, toggleFeedLike, addFeedComment, createPost, addReview, updateUserSocials, updateUserSecurity, addReferrer, getPublicProfileByCode, updateOrderAddress, updateProduct, deleteProduct, addProduct, updateAd, deleteAd, addAd, updateCampaignAsset, deleteCampaignAsset, addCampaignAsset, updateOnboardingSlide, deleteOnboardingSlide, addOnboardingSlide, updateOrderStatus, deleteOrder, updateCommissionStatus, deleteCommission, deleteTeamMember, updateMemberTier, updateFeedStatus, deleteFeedPost, updateFeedPost, broadcastPromotion, dismissPromotion, updateSystemSettings, updateUserReferralCode, factoryReset, healReferralCodes, healPhoneMap, healTeamSizes, healUplinePaths, refreshAllData, toggleFavorite, isFavorite
   };
 
   return <AppContext.Provider value={contextValue}>{children}</AppContext.Provider>;

@@ -33,6 +33,8 @@ export const CreateContent: React.FC = () => {
   const [mediaType, setMediaType] = useState<'image' | 'video' | null>(null);
   const [videoDuration, setVideoDuration] = useState<number>(0);
   const [isMediaValid, setIsMediaValid] = useState(true);
+  const [isModerating, setIsModerating] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   
   const [isGenerating, setIsGenerating] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
@@ -111,14 +113,81 @@ export const CreateContent: React.FC = () => {
         return;
     }
 
+    setIsUploading(true);
+
     const reader = new FileReader();
     reader.onloadend = async () => {
         const base64 = reader.result as string;
         
+        setIsUploading(false);
+        setIsModerating(true);
+        try {
+            const apiKey = process.env.GEMINI_API_KEY;
+            if (apiKey) {
+                const ai = new GoogleGenAI({ apiKey });
+                let moderationData = base64;
+                let moderationMime = file.type;
+
+                if (isVideo) {
+                    // Extract a frame for moderation
+                    try {
+                        moderationData = await new Promise((resolve, reject) => {
+                            const video = document.createElement('video');
+                            video.preload = 'metadata';
+                            video.onloadedmetadata = () => { video.currentTime = Math.min(1, video.duration / 2); };
+                            video.onseeked = () => {
+                                const canvas = document.createElement('canvas');
+                                canvas.width = video.videoWidth;
+                                canvas.height = video.videoHeight;
+                                const ctx = canvas.getContext('2d');
+                                ctx?.drawImage(video, 0, 0, canvas.width, canvas.height);
+                                resolve(canvas.toDataURL('image/jpeg', 0.5));
+                            };
+                            video.onerror = reject;
+                            video.src = URL.createObjectURL(file);
+                        });
+                        moderationMime = 'image/jpeg';
+                    } catch (e) {
+                        console.error("Frame extraction failed", e);
+                    }
+                }
+
+                const response = await ai.models.generateContent({
+                    model: 'gemini-3-flash-preview',
+                    contents: {
+                        parts: [
+                            {
+                                inlineData: {
+                                    data: moderationData.split(',')[1],
+                                    mimeType: moderationMime
+                                }
+                            },
+                            {
+                                text: "Analyze this image/frame. Is it illegal, pornographic, sexually explicit, or highly inappropriate? Answer 'SAFE' or 'UNSAFE'. Only one word."
+                            }
+                        ]
+                    }
+                });
+
+                const result = response.text.trim().toUpperCase();
+                if (result.includes('UNSAFE')) {
+                    showToast({ message: "Illegal or inappropriate content detected. Upload blocked.", type: 'error' });
+                    setIsModerating(false);
+                    if (fileInputRef.current) fileInputRef.current.value = '';
+                    return;
+                }
+            }
+        } catch (error) {
+            console.error("Moderation check failed:", error);
+        } finally {
+            setIsModerating(false);
+            setIsUploading(false);
+        }
+
         if (isVideo) {
             // Video size check (roughly)
-            if (file.size > 5 * 1024 * 1024) { // 5MB limit for video in base64 is still too much for Firestore
-                showToast({ message: "Video file is too large. Please upload a smaller video (under 1MB).", type: 'error' });
+            if (file.size > 10 * 1024 * 1024) { // Increased to 10MB
+                showToast({ message: "Video file is too large. Please upload a smaller video (under 10MB).", type: 'error' });
                 return;
             }
             const videoElement = document.createElement('video');
@@ -128,9 +197,9 @@ export const CreateContent: React.FC = () => {
                 const duration = videoElement.duration;
                 setVideoDuration(duration);
                 
-                if (duration > 180) {
+                if (duration > 300) { // Increased to 300s
                     setIsMediaValid(false);
-                    showToast({ message: "Video must be 180 seconds or less.", type: 'error' });
+                    showToast({ message: "Video must be 300 seconds or less.", type: 'error' });
                     setMedia(null);
                     setMediaType(null);
                 } else {
@@ -397,8 +466,8 @@ export const CreateContent: React.FC = () => {
   }, [myContents, contentTab]);
 
   return (
-    <div className="pb-24 pt-0 px-4 max-w-md mx-auto min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
-      <div className="sticky top-0 z-[100] bg-gray-50/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-100/50 dark:border-gray-800/50 -mx-4 px-4 py-3 mb-6 transition-all">
+    <div className="pb-20 pt-0 px-4 max-w-md mx-auto min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+      <div className="sticky top-0 z-[100] bg-gray-50/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-100/50 dark:border-gray-800/50 -mx-4 px-4 pt-10 pb-3 mb-6 transition-all">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
               <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full transition">
@@ -421,7 +490,7 @@ export const CreateContent: React.FC = () => {
                   )}
               </div>
               {availableCredits > 0 && (
-                  <div className="absolute -top-1.5 -right-1.5 bg-synergy-blue text-white text-[10px] font-black w-6 h-6 rounded-full flex items-center justify-center border-2 border-white dark:border-gray-900 shadow-md">
+                  <div className="absolute -top-2 -right-2 min-w-[18px] h-[18px] flex items-center justify-center text-[10px] font-bold text-white bg-red-500/80 rounded-full px-1 shadow-sm backdrop-blur-sm">
                       {availableCredits}
                   </div>
               )}
@@ -469,6 +538,24 @@ export const CreateContent: React.FC = () => {
                         <button onClick={handleRemoveMedia} className="bg-black/60 backdrop-blur-md text-white p-2 rounded-xl hover:bg-red-500 transition shadow-lg"><X size={18} /></button>
                     </div>
 
+                    {isModerating && (
+                        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex flex-col items-center justify-center text-white z-20">
+                            <Loader2 size={40} className="animate-spin mb-3" />
+                            <p className="text-xs font-black uppercase tracking-[0.2em]">Checking Content Safety...</p>
+                        </div>
+                    )}
+
+                    {isUploading && (
+                        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex flex-col items-center justify-center text-white z-20">
+                            <div className="relative w-16 h-16 flex items-center justify-center">
+                                <div className="absolute inset-0 border-4 border-white/20 rounded-full"></div>
+                                <div className="absolute inset-0 border-4 border-synergy-blue rounded-full border-t-transparent animate-spin"></div>
+                                <Film size={24} className="text-white" />
+                            </div>
+                            <p className="text-xs font-black uppercase tracking-[0.2em] mt-4">Uploading Video...</p>
+                        </div>
+                    )}
+
                     {isGeneratingImage && (
                         <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex flex-col items-center justify-center text-white z-20">
                             <Loader2 size={40} className="animate-spin mb-3" />
@@ -487,10 +574,10 @@ export const CreateContent: React.FC = () => {
                         <div className="absolute bottom-3 left-3 flex items-center space-x-2">
                             <div className="bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-white text-[10px] font-black flex items-center space-x-1 border border-white/20">
                                 <Clock size={12} />
-                                <span>{videoDuration.toFixed(1)}s / 180s</span>
+                                <span>{videoDuration.toFixed(1)}s / 300s</span>
                             </div>
                             <div className="bg-synergy-blue/80 backdrop-blur-md px-2 py-1 rounded-md text-white text-[8px] font-black uppercase tracking-widest border border-white/20">
-                                HD Supported
+                                FHD Supported
                             </div>
                         </div>
                     )}
@@ -502,7 +589,7 @@ export const CreateContent: React.FC = () => {
                         <div className="w-14 h-14 bg-gray-50 dark:bg-gray-700 rounded-2xl flex items-center justify-center"><Film size={32} className="opacity-40 text-synergy-blue" /></div>
                     </div>
                     <p className="text-xs font-black uppercase tracking-[0.2em]">Upload Content</p>
-                    <p className="text-[10px] text-gray-400 mt-2 font-bold">HD Video & Photos Supported</p>
+                    <p className="text-[10px] text-gray-400 mt-2 font-bold">FHD Video & Photos Supported</p>
                     <p className="text-[10px] text-gray-400 mt-1 font-bold">1 purchase = 1 AI content credit</p>
                 </div>
             )}
@@ -609,7 +696,7 @@ export const CreateContent: React.FC = () => {
                     <div className="w-12 h-1 bg-gray-200 dark:bg-gray-800 rounded-full mb-0.5"></div>
                 </div>
                 
-                <div className="px-6 flex justify-between items-center mb-1 bg-white dark:bg-gray-900 pb-1">
+                <div className="px-6 flex justify-between items-center mb-1 bg-white dark:bg-gray-900 pb-1 pt-4">
                     <div className="flex items-center space-x-3">
                         <div className="w-9 h-9 bg-synergy-blue/10 rounded-xl flex items-center justify-center text-synergy-blue">
                             <Layers size={18} />
@@ -622,7 +709,7 @@ export const CreateContent: React.FC = () => {
                     <button onClick={() => setShowContentList(false)} className="p-2 bg-gray-50 dark:bg-gray-800 rounded-full text-gray-500 hover:text-gray-700 transition active:scale-90"><X size={18} /></button>
                 </div>
 
-                <div className="flex space-x-2 overflow-x-auto no-scrollbar mb-1 px-6 bg-white dark:bg-gray-900 pb-2 sticky top-0 z-10">
+                <div className="flex space-x-2 overflow-x-auto no-scrollbar mb-1 px-6 bg-white dark:bg-gray-900 pb-2 pt-2 sticky top-0 z-10">
                     {['All', 'Approved', 'Pending'].map((tab) => (
                         <button 
                             key={tab}

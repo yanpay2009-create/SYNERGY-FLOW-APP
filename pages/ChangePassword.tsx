@@ -1,14 +1,21 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Lock, CheckCircle, Eye, EyeOff } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 export const ChangePassword: React.FC = () => {
   const navigate = useNavigate();
-  const { user, updateUserSecurity, showToast } = useApp();
+  const { user, updateUserSecurity, showToast, t } = useApp();
   const [form, setForm] = useState({ current: '', new: '', confirm: '' });
   const [showPwd, setShowPwd] = useState({ current: false, new: false, confirm: false });
+  const [initialHeight, setInitialHeight] = useState<number | null>(null);
+
+  useEffect(() => {
+    setInitialHeight(window.innerHeight);
+  }, []);
+
+  const isSettingPassword = !user?.password;
 
   const toggleShow = (field: keyof typeof showPwd) => {
     setShowPwd(prev => ({ ...prev, [field]: !prev[field] }));
@@ -16,7 +23,7 @@ export const ChangePassword: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (user?.password && form.current !== user.password) {
+    if (!isSettingPassword && user?.password && form.current !== user.password) {
         showToast({ message: "Current password incorrect!", type: 'error' });
         return;
     }
@@ -30,7 +37,7 @@ export const ChangePassword: React.FC = () => {
     }
     
     updateUserSecurity('password', form.new);
-    showToast({ message: "Password changed successfully!", type: 'success' });
+    showToast({ message: isSettingPassword ? "Password set successfully!" : "Password changed successfully!", type: 'success' });
     navigate(-1);
   };
 
@@ -57,12 +64,15 @@ export const ChangePassword: React.FC = () => {
   );
 
   return (
-    <div className="pb-24 pt-4 px-4 max-w-md mx-auto min-h-screen bg-gray-50">
+    <div 
+      className="pb-24 pt-4 px-4 max-w-md mx-auto bg-gray-50 overflow-y-auto"
+      style={{ minHeight: initialHeight ? `${initialHeight}px` : '100vh' }}
+    >
       <div className="flex items-center mb-6">
         <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-full transition">
           <ArrowLeft size={24} />
         </button>
-        <h1 className="text-xl font-bold ml-2">Change Password</h1>
+        <h1 className="text-xl font-bold ml-2">{isSettingPassword ? t('pref.set_password') : t('pref.password')}</h1>
       </div>
 
       <div className="bg-white p-6 rounded-3xl shadow-soft">
@@ -71,17 +81,17 @@ export const ChangePassword: React.FC = () => {
         </div>
         
         <form onSubmit={handleSubmit}>
-          <InputField label="Current Password" field="current" placeholder="••••••••" />
+          {!isSettingPassword && <InputField label="Current Password" field="current" placeholder="••••••••" />}
           <InputField label="New Password" field="new" placeholder="••••••••" />
           <InputField label="Confirm New Password" field="confirm" placeholder="••••••••" />
 
           <button
             type="submit"
-            disabled={!form.current || !form.new || !form.confirm}
+            disabled={(!isSettingPassword && !form.current) || !form.new || !form.confirm}
             className="w-full bg-synergy-blue text-white font-bold py-4 rounded-xl shadow-glow mt-4 flex items-center justify-center space-x-2 active:scale-[0.98] transition disabled:opacity-50 disabled:shadow-none"
           >
             <CheckCircle size={18} />
-            <span>Update Password</span>
+            <span>{isSettingPassword ? t('pref.set_password') : t('btn.save')}</span>
           </button>
         </form>
       </div>

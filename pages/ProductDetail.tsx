@@ -1,14 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
-import { ArrowLeft, Star, ShieldCheck, Truck, User, Share2, Heart, Check, Zap, Info, X, UserPlus, Search, Plus, TrendingUp, Sparkles, Trophy, Download, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowLeft, Star, ShieldCheck, Truck, User, Share2, Heart, Check, Zap, Info, X, UserPlus, Search, Plus, TrendingUp, Sparkles, Trophy, Download, ChevronDown, ChevronUp, Scan } from 'lucide-react';
 import { ShoppingBagIcon } from '../components/ShoppingBagIcon';
 import { useNavigate, useParams } from 'react-router-dom';
 import { UserTier, Product } from '../types';
 import { CountdownTimer } from '../components/CountdownTimer';
 import { ProductCard } from '../components/ProductCard';
 
+import { ReferralModal } from '../components/ReferralModal';
+
 export const ProductDetail: React.FC = () => {
-  const { products, addToCart, calculateCommission, user, referrer, addReferrer, t, setBottomNavHidden, cart, toggleFavorite, isFavorite, showToast } = useApp();
+  const { products, addToCart, calculateCommission, user, referrer, addReferrer, t, setBottomNavHidden, cart, toggleFavorite, isFavorite, showToast, isLoggedIn } = useApp();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   
@@ -22,8 +24,6 @@ export const ProductDetail: React.FC = () => {
 
   // Referrer Modal State
   const [showReferrerModal, setShowReferrerModal] = useState(false);
-  const [referrerCode, setReferrerCode] = useState('');
-  const [referrerError, setReferrerError] = useState('');
 
   // Ensure navigation is visible and scroll to top
   useEffect(() => {
@@ -75,8 +75,13 @@ export const ProductDetail: React.FC = () => {
   };
 
   const handleShare = async () => {
+    if (!isLoggedIn || !user) {
+        navigate('/account');
+        return;
+    }
+
     // Check for referrer before sharing
-    if (!referrer) {
+    if (!user?.referrerCode) {
       setShowReferrerModal(true);
       return;
     }
@@ -102,17 +107,6 @@ export const ProductDetail: React.FC = () => {
             showToast({ message: "Could not copy link.", type: 'error' });
         }
     }
-  };
-
-  const handleAddReferrer = async () => {
-      if (!referrerCode) return;
-      const result = await addReferrer(referrerCode);
-      if (result.success) {
-          setShowReferrerModal(false);
-          setReferrerError('');
-      } else {
-          setReferrerError(result.error || "Invalid Referral Code");
-      }
   };
 
   const handleDownloadImage = async (url: string) => {
@@ -150,7 +144,7 @@ export const ProductDetail: React.FC = () => {
   return (
     <div className="pb-24 pt-0 px-4 max-w-md mx-auto min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
       {/* Header Bar */}
-      <div className="sticky top-0 z-[100] bg-gray-50/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-100/50 dark:border-gray-800/50 -mx-4 px-4 py-3 mb-6 transition-all">
+      <div className="sticky top-0 z-[100] bg-gray-50/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-100/50 dark:border-gray-800/50 -mx-4 px-4 pt-10 pb-3 mb-6 transition-all">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
             <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full transition">
@@ -440,59 +434,9 @@ export const ProductDetail: React.FC = () => {
           </div>
       </div>
 
-      {/* REFERRER REQUIRED MODAL - Refined Global Style */}
+      {/* REFERRER REQUIRED MODAL */}
       {showReferrerModal && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center px-6">
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-md animate-in fade-in duration-500" onClick={() => setShowReferrerModal(false)}></div>
-            <div className="bg-white dark:bg-gray-800 w-full max-w-sm rounded-[40px] p-8 shadow-2xl relative z-10 animate-in zoom-in-95 border border-white/10 overflow-hidden">
-                <button 
-                    onClick={() => setShowReferrerModal(false)}
-                    className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 p-2 z-20"
-                >
-                    <X size={24} />
-                </button>
-                
-                <div className="text-center relative z-10">
-                    <div className="w-20 h-20 bg-blue-50 dark:bg-blue-900/20 text-synergy-blue rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm border border-blue-100 dark:border-blue-800">
-                        <UserPlus size={40} />
-                    </div>
-                    <h2 className="text-2xl font-black text-gray-900 dark:text-white mb-2 tracking-tight">Referral Code</h2>
-                    <p className="text-gray-500 dark:text-gray-400 text-sm mb-8 leading-relaxed font-medium">
-                        To generate your personal affiliate link and track commissions, you must link your account to a referrer.
-                    </p>
-                    
-                    <div className="mb-6 relative">
-                        <input 
-                            value={referrerCode}
-                            onChange={(e) => {
-                                setReferrerCode(e.target.value.toUpperCase());
-                                setReferrerError('');
-                            }}
-                            placeholder="EX. BOSS001"
-                            className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl py-5 px-4 text-center font-black text-2xl uppercase tracking-[0.2em] text-synergy-blue placeholder:font-normal focus:outline-none focus:ring-4 focus:ring-synergy-blue/10 shadow-inner"
-                        />
-                        {referrerError && <p className="text-red-500 text-xs mt-2 font-black uppercase tracking-widest animate-pulse">{referrerError}</p>}
-                    </div>
-
-                    <div className="flex flex-col space-y-3">
-                        <button 
-                            onClick={handleAddReferrer}
-                            disabled={!referrerCode}
-                            className="w-full bg-synergy-blue text-white font-black py-4 rounded-full shadow-glow active:scale-95 transition flex items-center justify-center space-x-2 h-14"
-                        >
-                            <Sparkles size={20} />
-                            <span className="uppercase tracking-widest text-xs">Link & Share</span>
-                        </button>
-                        <button 
-                            onClick={() => setShowReferrerModal(false)}
-                            className="text-[11px] font-black text-gray-400 hover:text-gray-600 transition uppercase tracking-[0.3em] py-2"
-                        >
-                            Cancel
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <ReferralModal onClose={() => setShowReferrerModal(false)} />
       )}
 
       {/* FULLSCREEN IMAGE MODAL */}
@@ -522,6 +466,7 @@ export const ProductDetail: React.FC = () => {
             </div>
         </div>
       )}
+
 
     </div>
   );

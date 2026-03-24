@@ -136,7 +136,7 @@ export const MyOrders: React.FC = () => {
 
   return (
     <div className="pb-24 pt-0 px-4 max-w-md mx-auto min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors duration-300">
-      <div className="sticky top-0 z-[100] bg-gray-50/80 dark:bg-gray-950/80 backdrop-blur-xl border-b border-gray-100/50 dark:border-gray-800/50 -mx-4 px-4 py-3 mb-6 transition-all">
+      <div className="sticky top-0 z-[100] bg-gray-50/80 dark:bg-gray-950/80 backdrop-blur-xl border-b border-gray-100/50 dark:border-gray-800/50 -mx-4 px-4 pt-10 pb-3 mb-6 transition-all">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
             <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full transition">
@@ -222,7 +222,7 @@ export const MyOrders: React.FC = () => {
                                     <div className="flex justify-between items-center">
                                         <p className="text-base font-black text-synergy-blue">฿{(order.total ?? 0).toLocaleString()}</p>
                                         <div className="flex items-center space-x-1">
-                                            {[1, 2, 3, 4].map(i => (
+                                            {[1, 2, 3].map(i => (
                                                 <div key={i} className={`w-1 h-1 rounded-full ${i <= status.step ? 'bg-synergy-blue shadow-glow' : 'bg-gray-100 dark:bg-gray-800'}`} />
                                             ))}
                                         </div>

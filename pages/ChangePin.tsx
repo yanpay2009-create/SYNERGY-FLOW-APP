@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Shield } from 'lucide-react';
 import { useApp } from '../context/AppContext';
@@ -11,6 +11,11 @@ export const ChangePin: React.FC = () => {
   const [pin, setPin] = useState('');
   const [newPin, setNewPin] = useState('');
   const [error, setError] = useState(false);
+  const [initialHeight, setInitialHeight] = useState<number | null>(null);
+
+  useEffect(() => {
+    setInitialHeight(window.innerHeight);
+  }, []);
 
   // Use real pin from context, default to 123456 if not set
   const currentPin = user?.pin || '123456';
@@ -64,7 +69,10 @@ export const ChangePin: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-6 max-w-md mx-auto relative">
+    <div 
+      className="bg-gray-50 flex flex-col items-center justify-center px-6 max-w-md mx-auto relative overflow-y-auto"
+      style={{ minHeight: initialHeight ? `${initialHeight}px` : '100vh' }}
+    >
       <div className="absolute top-4 left-4">
         <button onClick={() => navigate(-1)} className="p-2 text-gray-600 hover:bg-gray-100 rounded-full transition">
           <ArrowLeft size={24} />

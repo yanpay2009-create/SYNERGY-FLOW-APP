@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import { 
   ArrowLeft, 
@@ -16,23 +16,43 @@ import {
   Download,
   Share2,
   Check,
+  Clock,
+  Crown,
+  ShoppingBag,
   ShieldCheck,
   Landmark,
   CheckCircle2,
   Lock,
   X
 } from 'lucide-react';
-import { ShoppingBagIcon } from '../components/ShoppingBagIcon';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { UserTier, CommissionTransaction } from '../types';
 
 export const CommissionHistory: React.FC = () => {
   const { commissions, user, t, systemSettings, allOrders } = useApp();
   const navigate = useNavigate();
+  const location = useLocation();
   
   const [activeFilter, setActiveFilter] = useState<'All' | 'Direct' | 'Team' | 'Withdrawal'>('All');
   const [viewMode, setViewMode] = useState<'list' | 'detail'>('list');
   const [selectedTx, setSelectedTx] = useState<CommissionTransaction | null>(null);
+  const [selectedIncomeType, setSelectedIncomeType] = useState<'weekly' | 'monthly' | 'total' | null>(null);
+
+  const handledTxId = useRef<string | null>(null);
+
+  useEffect(() => {
+    const txId = location.state?.txId;
+    if (txId && commissions.length > 0 && handledTxId.current !== String(txId)) {
+      const tx = commissions.find(c => String(c.id) === String(txId));
+      if (tx) {
+        setSelectedTx(tx);
+        setViewMode('detail');
+        handledTxId.current = String(txId);
+        // Clear state to prevent re-triggering on back/forward
+        window.history.replaceState({}, document.title);
+      }
+    }
+  }, [location.state, commissions]);
 
   // PIN Gate States
   const [isVerifyingPin, setIsVerifyingPin] = useState(false);
@@ -78,6 +98,31 @@ export const CommissionHistory: React.FC = () => {
       .reduce((acc, curr) => acc + curr.amount, 0);
   }, [userCommissions]);
 
+  // Calculate Previous Monthly Revenue
+  const previousMonthlyEarned = useMemo(() => {
+    const now = new Date();
+    const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const prevMonth = prevMonthDate.toLocaleString('en-GB', { month: 'short' });
+    const prevYear = prevMonthDate.getFullYear().toString();
+    
+    return userCommissions
+      .filter(c => 
+        c.date.includes(prevMonth) && 
+        c.date.includes(prevYear) &&
+        c.amount > 0 &&
+        (c.type === 'Direct' || c.type === 'Team') &&
+        (c.status === 'Paid' || c.status === 'Completed')
+      )
+      .reduce((acc, curr) => acc + curr.amount, 0);
+  }, [userCommissions]);
+
+  const monthlyChangePercent = useMemo(() => {
+    if (previousMonthlyEarned === 0) {
+      return monthlyEarned > 0 ? 100 : 0;
+    }
+    return ((monthlyEarned - previousMonthlyEarned) / previousMonthlyEarned) * 100;
+  }, [monthlyEarned, previousMonthlyEarned]);
+
   // Calculate Weekly Revenue (Last 7 days)
   const weeklyEarned = useMemo(() => {
     const now = new Date();
@@ -95,6 +140,97 @@ export const CommissionHistory: React.FC = () => {
       })
       .reduce((acc, curr) => acc + curr.amount, 0);
   }, [userCommissions]);
+
+  // Calculate Previous Weekly Revenue (7-14 days ago)
+  const previousWeeklyEarned = useMemo(() => {
+    const now = new Date();
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(now.getDate() - 7);
+    const fourteenDaysAgo = new Date();
+    fourteenDaysAgo.setDate(now.getDate() - 14);
+    
+    return userCommissions
+      .filter(c => {
+        const txDate = new Date(c.date);
+        return txDate >= fourteenDaysAgo && 
+               txDate < sevenDaysAgo &&
+               c.amount > 0 &&
+               (c.type === 'Direct' || c.type === 'Team') &&
+               (c.status === 'Paid' || c.status === 'Completed');
+      })
+      .reduce((acc, curr) => acc + curr.amount, 0);
+  }, [userCommissions]);
+
+  const weeklyChangePercent = useMemo(() => {
+    if (previousWeeklyEarned === 0) {
+      return weeklyEarned > 0 ? 100 : 0;
+    }
+    return ((weeklyEarned - previousWeeklyEarned) / previousWeeklyEarned) * 100;
+  }, [weeklyEarned, previousWeeklyEarned]);
+
+  // Calculate Yearly Revenue
+  const yearlyEarned = useMemo(() => {
+    const now = new Date();
+    const currentYear = now.getFullYear().toString();
+    
+    return userCommissions
+      .filter(c => 
+        c.date.includes(currentYear) &&
+        c.amount > 0 &&
+        (c.type === 'Direct' || c.type === 'Team') &&
+        (c.status === 'Paid' || c.status === 'Completed')
+      )
+      .reduce((acc, curr) => acc + curr.amount, 0);
+  }, [userCommissions]);
+
+  // Calculate Previous Yearly Revenue
+  const previousYearlyEarned = useMemo(() => {
+    const now = new Date();
+    const prevYear = (now.getFullYear() - 1).toString();
+    
+    return userCommissions
+      .filter(c => 
+        c.date.includes(prevYear) &&
+        c.amount > 0 &&
+        (c.type === 'Direct' || c.type === 'Team') &&
+        (c.status === 'Paid' || c.status === 'Completed')
+      )
+      .reduce((acc, curr) => acc + curr.amount, 0);
+  }, [userCommissions]);
+
+  const yearlyChangePercent = useMemo(() => {
+    if (previousYearlyEarned === 0) {
+      return yearlyEarned > 0 ? 100 : 0;
+    }
+    return ((yearlyEarned - previousYearlyEarned) / previousYearlyEarned) * 100;
+  }, [yearlyEarned, previousYearlyEarned]);
+
+  // Calculate detailed stats for the selected summary card
+  const selectedStats = useMemo(() => {
+    if (!selectedIncomeType) return null;
+    
+    let filtered = userCommissions.filter(c => (c.status === 'Paid' || c.status === 'Completed') && c.amount > 0);
+    
+    if (selectedIncomeType === 'weekly') {
+      const now = new Date();
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(now.getDate() - 7);
+      filtered = filtered.filter(c => {
+        const txDate = new Date(c.date);
+        return txDate >= sevenDaysAgo && txDate <= now;
+      });
+    } else if (selectedIncomeType === 'monthly') {
+      const now = new Date();
+      const currentMonth = now.toLocaleString('en-GB', { month: 'short' });
+      const currentYear = now.getFullYear().toString();
+      filtered = filtered.filter(c => c.date.includes(currentMonth) && c.date.includes(currentYear));
+    }
+    
+    const direct = filtered.filter(c => c.type === 'Direct').reduce((acc, curr) => acc + curr.amount, 0);
+    const team = filtered.filter(c => c.type === 'Team').reduce((acc, curr) => acc + curr.amount, 0);
+    
+    return { direct, team };
+  }, [selectedIncomeType, userCommissions]);
 
   // Show Total Sales (Accumulated Volume)
   const walletBalance = user?.walletBalance || 0;
@@ -204,9 +340,13 @@ export const CommissionHistory: React.FC = () => {
 
             <div className="flex-1 px-6 flex flex-col items-center justify-center animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div className="relative mb-6">
-                    <div className="absolute inset-0 bg-emerald-500/20 blur-xl rounded-full animate-pulse"></div>
-                    <div className="relative w-16 h-16 bg-emerald-500 rounded-full flex items-center justify-center text-white shadow-lg">
-                        <Check size={32} strokeWidth={4} className="animate-in zoom-in-50 duration-300 delay-100" />
+                    <div className={`absolute inset-0 ${selectedTx.status === 'Paid' || selectedTx.status === 'Completed' ? 'bg-emerald-500/20' : 'bg-amber-500/20'} blur-xl rounded-full animate-pulse`}></div>
+                    <div className={`relative w-16 h-16 ${selectedTx.status === 'Paid' || selectedTx.status === 'Completed' ? 'bg-emerald-500' : 'bg-amber-500'} rounded-full flex items-center justify-center text-white shadow-lg`}>
+                        {selectedTx.status === 'Paid' || selectedTx.status === 'Completed' ? (
+                            <Check size={32} strokeWidth={4} className="animate-in zoom-in-50 duration-300 delay-100" />
+                        ) : (
+                            <Clock size={32} strokeWidth={4} className="animate-in zoom-in-50 duration-300 delay-100" />
+                        )}
                     </div>
                 </div>
                 
@@ -331,21 +471,31 @@ export const CommissionHistory: React.FC = () => {
           </div>
       )}
 
-      <div className="sticky top-0 z-[100] bg-gray-50/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-100/50 dark:border-gray-800/50 -mx-4 px-4 py-3 mb-6 transition-all">
+      <div className="sticky top-0 z-[100] bg-gray-50/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-100/50 dark:border-gray-800/50 -mx-4 px-4 pt-10 pb-3 mb-6 transition-all">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
             <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full transition">
               <ArrowLeft size={24} />
             </button>
-            <h1 className="text-xl font-bold ml-2 text-gray-900 dark:text-white tracking-tight">Commissions History</h1>
+            <h1 className="text-xl font-bold ml-2 text-gray-900 dark:text-white tracking-tight">Income History</h1>
           </div>
+          <button 
+            onClick={() => navigate(`/tier-data/Executive`)}
+            className="p-2.5 bg-white dark:bg-gray-800 text-amber-500 rounded-full shadow-sm hover:bg-amber-50 dark:hover:bg-amber-900/30 transition border border-amber-100 dark:border-gray-700 active:scale-95"
+            title="Executive Board"
+          >
+            <Crown size={20} />
+          </button>
         </div>
       </div>
 
       {/* REVENUE DASHBOARD GRID */}
       <div className="grid grid-cols-2 gap-4 mb-6">
           {/* Weekly */}
-          <div className="bg-white dark:bg-gray-800 p-4 rounded-3xl shadow-sm border border-transparent dark:border-gray-700 hover:border-purple-100 dark:hover:border-purple-900/30 transition-all">
+          <div 
+            onClick={() => setSelectedIncomeType(selectedIncomeType === 'weekly' ? null : 'weekly')}
+            className={`p-4 rounded-3xl shadow-sm border transition-all cursor-pointer active:scale-95 ${selectedIncomeType === 'weekly' ? 'bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800 ring-2 ring-purple-500/10' : 'bg-white dark:bg-gray-800 border-transparent dark:border-gray-700 hover:border-purple-100 dark:hover:border-purple-900/30'}`}
+          >
               <div className="flex items-center space-x-2 mb-2">
                   <div className="w-8 h-8 rounded-full bg-purple-50 dark:bg-purple-900/30 text-purple-500 flex items-center justify-center">
                       <Zap size={16} />
@@ -353,11 +503,17 @@ export const CommissionHistory: React.FC = () => {
                   <span className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">Weekly</span>
               </div>
               <p className="text-xl font-black text-gray-900 dark:text-white">฿{Math.floor(animatedWeekly ?? 0).toLocaleString()}</p>
-              <p className="text-[9px] text-gray-400 mt-1 font-bold uppercase tracking-tighter">Last 7 Days</p>
+              <p className={`text-[9px] mt-1 font-bold uppercase tracking-tighter flex items-center ${weeklyChangePercent >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                {weeklyChangePercent >= 0 ? <ArrowUpRight size={10} className="mr-0.5" /> : <ArrowUpRight size={10} className="mr-0.5 rotate-90" />}
+                {weeklyChangePercent >= 0 ? '+' : ''}{weeklyChangePercent.toFixed(1)}% last week
+              </p>
           </div>
 
           {/* Monthly */}
-          <div className="bg-white dark:bg-gray-800 p-4 rounded-3xl shadow-sm border border-transparent dark:border-gray-700 hover:border-blue-100 dark:hover:border-blue-900/30 transition-all">
+          <div 
+            onClick={() => setSelectedIncomeType(selectedIncomeType === 'monthly' ? null : 'monthly')}
+            className={`p-4 rounded-3xl shadow-sm border transition-all cursor-pointer active:scale-95 ${selectedIncomeType === 'monthly' ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 ring-2 ring-blue-500/10' : 'bg-white dark:bg-gray-800 border-transparent dark:border-gray-700 hover:border-blue-100 dark:hover:border-blue-900/30'}`}
+          >
               <div className="flex items-center space-x-2 mb-2">
                   <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-900/30 text-synergy-blue flex items-center justify-center">
                       <BarChart3 size={16} />
@@ -365,19 +521,28 @@ export const CommissionHistory: React.FC = () => {
                   <span className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">Monthly</span>
               </div>
               <p className="text-xl font-black text-gray-900 dark:text-white">฿{Math.floor(animatedMonthly ?? 0).toLocaleString()}</p>
-              <p className="text-[9px] text-gray-400 mt-1 font-bold uppercase tracking-tighter">Current Month</p>
+              <p className={`text-[9px] mt-1 font-bold uppercase tracking-tighter flex items-center ${monthlyChangePercent >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                {monthlyChangePercent >= 0 ? <ArrowUpRight size={10} className="mr-0.5" /> : <ArrowUpRight size={10} className="mr-0.5 rotate-90" />}
+                {monthlyChangePercent >= 0 ? '+' : ''}{monthlyChangePercent.toFixed(1)}% last month
+              </p>
           </div>
 
           {/* Accumulated */}
-          <div className="bg-white dark:bg-gray-800 p-4 rounded-3xl shadow-sm border border-transparent dark:border-gray-700 hover:border-emerald-100 dark:hover:border-emerald-900/30 transition-all">
+          <div 
+            onClick={() => setSelectedIncomeType(selectedIncomeType === 'total' ? null : 'total')}
+            className={`p-4 rounded-3xl shadow-sm border transition-all cursor-pointer active:scale-95 ${selectedIncomeType === 'total' ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 ring-2 ring-emerald-500/10' : 'bg-white dark:bg-gray-800 border-transparent dark:border-gray-700 hover:border-emerald-100 dark:hover:border-emerald-900/30'}`}
+          >
               <div className="flex items-center space-x-2 mb-2">
                   <div className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-500 flex items-center justify-center">
                       <TrendingUp size={16} />
                   </div>
-                  <span className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">Income</span>
+                  <span className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">Total Income</span>
               </div>
               <p className="text-xl font-black text-gray-900 dark:text-white">฿{Math.floor(animatedEarned ?? 0).toLocaleString()}</p>
-              <p className="text-[9px] text-gray-400 mt-1 font-bold uppercase tracking-tighter">Total Income</p>
+              <p className={`text-[9px] mt-1 font-bold uppercase tracking-tighter flex items-center ${yearlyChangePercent >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                {yearlyChangePercent >= 0 ? <ArrowUpRight size={10} className="mr-0.5" /> : <ArrowUpRight size={10} className="mr-0.5 rotate-90" />}
+                {yearlyChangePercent >= 0 ? '+' : ''}{yearlyChangePercent.toFixed(1)}% last year
+              </p>
           </div>
 
           {/* Withdrawable */}
@@ -392,6 +557,93 @@ export const CommissionHistory: React.FC = () => {
               <p className="text-[9px] text-gray-400 mt-1 font-bold uppercase tracking-tighter">Available Balance</p>
           </div>
       </div>
+
+      {/* Income Summary Card */}
+      {selectedIncomeType && (
+        <div className="mb-6 animate-in fade-in slide-in-from-top-4 duration-500">
+          <div className={`p-6 rounded-[32px] border shadow-sm relative overflow-hidden ${
+            selectedIncomeType === 'weekly' ? 'bg-purple-50/50 border-purple-100 dark:bg-purple-900/10 dark:border-purple-900/30' :
+            selectedIncomeType === 'monthly' ? 'bg-blue-50/50 border-blue-100 dark:bg-blue-900/10 dark:border-blue-900/30' :
+            'bg-emerald-50/50 border-emerald-100 dark:bg-emerald-900/10 dark:border-emerald-900/30'
+          }`}>
+            {/* Decorative background icon */}
+            <div className="absolute -right-4 -bottom-4 opacity-5 dark:opacity-10 text-gray-900 dark:text-white">
+              {selectedIncomeType === 'weekly' ? <Zap size={120} /> : 
+               selectedIncomeType === 'monthly' ? <BarChart3 size={120} /> : 
+               <TrendingUp size={120} />}
+            </div>
+
+            <div className="flex justify-between items-start mb-6 relative z-10">
+              <div>
+                <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">
+                  {selectedIncomeType === 'weekly' ? 'Weekly Summary' : 
+                   selectedIncomeType === 'monthly' ? 'Monthly Summary' : 
+                   'Total Income Summary'}
+                </h3>
+                <p className="text-3xl font-black text-gray-900 dark:text-white">
+                  ฿{Math.floor(
+                    selectedIncomeType === 'weekly' ? animatedWeekly :
+                    selectedIncomeType === 'monthly' ? animatedMonthly :
+                    animatedEarned
+                  ).toLocaleString()}
+                </p>
+              </div>
+              <button 
+                onClick={() => setSelectedIncomeType(null)}
+                className="p-2 bg-white/50 dark:bg-gray-800/50 rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition active:scale-90"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3 relative z-10">
+              <div className="bg-white/80 dark:bg-gray-800/80 p-4 rounded-2xl border border-white/20 shadow-sm">
+                <div className="flex items-center space-x-2 mb-1">
+                  <ShoppingBag size={12} className="text-blue-500" />
+                  <p className="text-[9px] font-bold text-gray-400 uppercase">Direct Sales</p>
+                </div>
+                <p className="text-sm font-black text-gray-900 dark:text-white">
+                  ฿{Math.floor(selectedStats?.direct ?? 0).toLocaleString()}
+                </p>
+              </div>
+              <div className="bg-white/80 dark:bg-gray-800/80 p-4 rounded-2xl border border-white/20 shadow-sm">
+                <div className="flex items-center space-x-2 mb-1">
+                  <Users size={12} className="text-purple-500" />
+                  <p className="text-[9px] font-bold text-gray-400 uppercase">Team Bonus</p>
+                </div>
+                <p className="text-sm font-black text-gray-900 dark:text-white">
+                  ฿{Math.floor(selectedStats?.team ?? 0).toLocaleString()}
+                </p>
+              </div>
+              <div className="col-span-2 bg-white/80 dark:bg-gray-800/80 p-4 rounded-2xl border border-white/20 shadow-sm flex justify-between items-center">
+                <div>
+                  <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Performance Growth</p>
+                  <p className={`text-sm font-black flex items-center ${
+                    (selectedIncomeType === 'weekly' ? weeklyChangePercent : 
+                     selectedIncomeType === 'monthly' ? monthlyChangePercent : 
+                     yearlyChangePercent) >= 0 ? 'text-emerald-500' : 'text-red-500'
+                  }`}>
+                    {(selectedIncomeType === 'weekly' ? weeklyChangePercent : 
+                      selectedIncomeType === 'monthly' ? monthlyChangePercent : 
+                      yearlyChangePercent) >= 0 ? <ArrowUpRight size={14} className="mr-1" /> : <ArrowUpRight size={14} className="mr-1 rotate-90" />}
+                    {Math.abs(selectedIncomeType === 'weekly' ? weeklyChangePercent : 
+                      selectedIncomeType === 'monthly' ? monthlyChangePercent : 
+                      yearlyChangePercent).toFixed(1)}%
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Period</p>
+                  <p className="text-[10px] font-black text-gray-900 dark:text-white uppercase tracking-wider">
+                    {selectedIncomeType === 'weekly' ? 'Last 7 Days' : 
+                     selectedIncomeType === 'monthly' ? 'Current Month' : 
+                     'Lifetime'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Withdraw Button */}
       <div className="mb-8">
@@ -440,7 +692,7 @@ export const CommissionHistory: React.FC = () => {
                 >
                     <div className="flex items-center space-x-3">
                         <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 shadow-sm border border-gray-50 dark:border-gray-700 ${tx.type === 'Direct' ? 'bg-blue-50 text-synergy-blue' : tx.type === 'Withdrawal' ? 'bg-red-50 text-red-500' : 'bg-purple-50 text-purple-500'}`}>
-                            {tx.type === 'Direct' ? <ShoppingBagIcon size={20} /> : tx.type === 'Withdrawal' ? <ArrowUpRight size={20} /> : <Users size={20} />}
+                            {tx.type === 'Direct' ? <ShoppingBag size={20} /> : tx.type === 'Withdrawal' ? <ArrowUpRight size={20} /> : <Users size={20} />}
                         </div>
                         <div className="min-w-0">
                             <h4 className="text-sm font-bold text-gray-900 dark:text-white truncate max-w-[150px]">

@@ -1,11 +1,11 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { 
   ArrowLeft, ArrowRight, Users, CreditCard, Wallet, Search, 
   Trash2, X, Zap, Camera, Heart, MessageCircle,
   Sparkles, Link as LinkIcon, Activity, 
   Globe, ImageIcon, Printer, Play, 
   QrCode, Loader2, ShieldCheck, Box, ClipboardList, Check, CheckCircle, Landmark, Banknote, Edit2, Mail,
-  Layout, Megaphone, Monitor, ChevronRight, RotateCcw, Truck, AlertTriangle
+  Layout, Megaphone, Monitor, ChevronRight, ChevronLeft, RotateCcw, Truck, AlertTriangle
 } from 'lucide-react';
 import { ShoppingBagIcon } from '../components/ShoppingBagIcon';
 import { useNavigate } from 'react-router-dom';
@@ -19,7 +19,7 @@ export const AdminDashboard: React.FC = () => {
     broadcastPromotion, dismissPromotion, updateOrderStatus, deleteOrder, 
     updateCommissionStatus, deleteCommission, deleteTeamMember, updateMemberTier, 
     updateFeedStatus, deleteFeedPost, systemSettings, updateSystemSettings, updateUserKycStatus, showToast,
-    updateUserReferralCode, factoryReset, healReferralCodes, healTeamSizes, healUplinePaths, updateUserRole
+    updateUserReferralCode, factoryReset, healReferralCodes, healPhoneMap, healTeamSizes, healUplinePaths, updateUserRole
   } = useApp();
   
   const [activeTab, setActiveTab] = useState<'Members' | 'Orders' | 'Withdrawals' | 'Posts' | 'KYC' | 'Settings' | 'Events'>('Members');
@@ -38,6 +38,34 @@ export const AdminDashboard: React.FC = () => {
   
   const [printingLabel, setPrintingLabel] = useState<Order | null>(null);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  // Handle video playback safely
+  useEffect(() => {
+    let isMounted = true;
+    if (previewPost?.type === 'video' && videoRef.current) {
+        const video = videoRef.current;
+        const playVideo = async () => {
+            if (!video.isConnected) return;
+            try {
+                const playPromise = video.play();
+                if (playPromise !== undefined) {
+                    await playPromise;
+                }
+            } catch (err) {
+                // Ignore play interruptions and media removed errors
+                if (isMounted && err instanceof Error && 
+                    err.name !== 'AbortError' && 
+                    !err.message.includes('interrupted') &&
+                    !err.message.includes('removed')) {
+                    console.error("Video playback failed:", err);
+                }
+            }
+        };
+        playVideo();
+    }
+    return () => { isMounted = false; };
+  }, [previewPost]);
 
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -286,6 +314,47 @@ export const AdminDashboard: React.FC = () => {
     if (showSearch) setSearchQuery('');
   };
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 50;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, searchQuery, statusFilter]);
+
+  const totalPages = Math.ceil(filteredList.length / ITEMS_PER_PAGE);
+  const paginatedList = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredList.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredList, currentPage]);
+
+  const renderPageNumbers = () => {
+    const pages = [];
+    const maxVisible = 5;
+    
+    if (totalPages <= maxVisible) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      if (currentPage <= 3) {
+        pages.push(1, 2, 3, '...', totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        pages.push(1, '...', totalPages - 2, totalPages - 1, totalPages);
+      } else {
+        pages.push(1, '...', currentPage, '...', totalPages);
+      }
+    }
+
+    return pages.map((p, i) => (
+      <button
+        key={i}
+        onClick={() => typeof p === 'number' && setCurrentPage(p)}
+        disabled={p === '...'}
+        className={`w-7 h-7 rounded-lg text-[10px] font-black transition-all ${p === currentPage ? 'bg-synergy-blue text-white shadow-glow' : 'text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-900'}`}
+      >
+        {p}
+      </button>
+    ));
+  };
+
   return (
     <div className="pb-24 pt-4 px-4 max-w-md mx-auto min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300 font-sans">
       <div className="flex items-center justify-between mb-6">
@@ -532,6 +601,13 @@ export const AdminDashboard: React.FC = () => {
                       >
                         Heal Upline Paths (Network Tree)
                       </button>
+
+                      <button 
+                        onClick={() => healPhoneMap()}
+                        className="w-full py-4 bg-indigo-500 hover:bg-indigo-600 text-white rounded-[20px] font-black text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-indigo-500/20 active:scale-95"
+                      >
+                        Heal Phone/Email Mappings (Login Fix)
+                      </button>
                       
                       <button 
                         onClick={() => setShowResetConfirm(true)}
@@ -680,13 +756,13 @@ export const AdminDashboard: React.FC = () => {
             </div>
 
             <div className="space-y-4">
-                {filteredList.length === 0 ? (
+                {paginatedList.length === 0 ? (
                     <div className="text-center py-16">
                         <Activity size={48} className="mx-auto text-gray-100 dark:text-gray-800 mb-4" />
                         <p className="text-gray-400 text-[10px] font-black uppercase tracking-[0.3em]">Data Reservoir Empty</p>
                     </div>
                 ) : (
-                    filteredList.map((item: any) => {
+                    paginatedList.map((item: any) => {
                         if (activeTab === 'Members') {
                             return (
                               <div key={item.id} onClick={() => setSelectedMember(item)} className="flex items-center justify-between pb-5 border-b border-gray-50 dark:border-gray-700 last:border-0 last:pb-0 cursor-pointer active:opacity-70 transition-all">
@@ -794,6 +870,35 @@ export const AdminDashboard: React.FC = () => {
                     })
                 )}
             </div>
+
+            {filteredList.length > 0 && (
+                <div className="mt-8 pt-6 border-t border-gray-50 dark:border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                        (Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1}- {Math.min(currentPage * ITEMS_PER_PAGE, filteredList.length)} of {filteredList.length} {activeTab === 'Members' ? "Member's" : activeTab})
+                    </p>
+                    <div className="flex items-center space-x-1">
+                        <button 
+                            disabled={currentPage === 1}
+                            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                            className="p-1.5 rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-400 disabled:opacity-30 transition-all hover:text-synergy-blue"
+                        >
+                            <ChevronLeft size={14} />
+                        </button>
+                        
+                        <div className="flex items-center space-x-1">
+                            {renderPageNumbers()}
+                        </div>
+
+                        <button 
+                            disabled={currentPage === totalPages}
+                            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                            className="p-1.5 rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-400 disabled:opacity-30 transition-all hover:text-synergy-blue"
+                        >
+                            <ChevronRight size={14} />
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
       )}
 
@@ -982,7 +1087,15 @@ export const AdminDashboard: React.FC = () => {
                <div className="bg-white dark:bg-gray-800 w-full max-w-sm rounded-[32px] overflow-hidden shadow-2xl relative z-10 animate-in zoom-in-95 border border-transparent dark:border-gray-700" onClick={(e) => e.stopPropagation()}>
                     <div className="relative aspect-square bg-gray-100 dark:bg-gray-900">
                         {previewPost.type === 'video' ? (
-                            <video src={previewPost.content || undefined} className="w-full h-full object-cover" controls autoPlay muted loop />
+                            <video 
+                                ref={videoRef}
+                                src={previewPost.content || undefined} 
+                                className="w-full h-full object-cover" 
+                                controls 
+                                muted 
+                                loop 
+                                playsInline
+                            />
                         ) : (
                             <img src={previewPost.content || undefined} className="w-full h-full object-cover" alt="content" />
                         )}

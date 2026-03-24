@@ -29,7 +29,7 @@ export const Onboarding: React.FC = () => {
   const activeSlide = onboardingSlides[current];
 
   return (
-    <div className="relative h-screen bg-gray-900 overflow-hidden flex flex-col justify-between max-w-md mx-auto shadow-2xl">
+    <div className="relative h-screen bg-gray-900 overflow-hidden flex flex-col justify-between max-w-md mx-auto">
       {/* Background Image with Overlay */}
       <div className="absolute inset-0 z-0 bg-gray-900">
         <img 
@@ -42,7 +42,6 @@ export const Onboarding: React.FC = () => {
             }}
             className="w-full h-full object-cover transition-opacity duration-700 ease-in-out animate-in fade-in" 
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/10 to-black/80" />
       </div>
 
       <div className="z-10 mt-12 px-6 flex justify-end">
@@ -52,19 +51,10 @@ export const Onboarding: React.FC = () => {
       </div>
 
       <div className="z-10 pb-12 px-8 text-white">
-        <div className="flex space-x-2 mb-6">
-          {onboardingSlides.map((_, idx) => (
-            <div 
-              key={idx} 
-              className={`h-1.5 rounded-full transition-all duration-300 ${current === idx ? 'w-8 bg-synergy-blue' : 'w-2 bg-white/50'}`}
-            />
-          ))}
-        </div>
-        
-        <h1 className="text-4xl font-bold mb-4 leading-tight animate-in slide-in-from-bottom-5 duration-500 drop-shadow-lg">
+        <h1 className="text-4xl font-bold mb-4 leading-tight animate-in slide-in-from-bottom-5 duration-500">
           {activeSlide.title}
         </h1>
-        <p className="text-white/90 text-lg mb-8 font-light animate-in slide-in-from-bottom-5 duration-700 drop-shadow-md">
+        <p className="text-white/90 text-lg mb-8 font-light animate-in slide-in-from-bottom-5 duration-700">
           {activeSlide.desc}
         </p>
 

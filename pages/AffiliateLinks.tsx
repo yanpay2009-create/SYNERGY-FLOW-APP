@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { ArrowLeft, Copy, Share2, Check, Hash, UserPlus, Search, X, Sparkles, Download } from 'lucide-react';
+import { ArrowLeft, Copy, Share2, Check, Hash, UserPlus, Search, X, Sparkles, Download, Scan } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { ReferralModal } from '../components/ReferralModal';
 
 export const AffiliateLinks: React.FC = () => {
-  const { user, referrer, addReferrer, campaignAssets } = useApp();
+  const { user, referrer, campaignAssets, showToast } = useApp();
   const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
   const [codeCopied, setCodeCopied] = useState(false);
@@ -12,8 +13,6 @@ export const AffiliateLinks: React.FC = () => {
 
   // Referrer Modal State - Now starts as false to let user see the page first
   const [showReferrerModal, setShowReferrerModal] = useState(false);
-  const [referrerCode, setReferrerCode] = useState('');
-  const [referrerError, setReferrerError] = useState('');
 
   const referralCode = user?.referralCode || 'GUEST';
   const baseUrl = window.location.origin + window.location.pathname.replace(/\/$/, '');
@@ -23,7 +22,7 @@ export const AffiliateLinks: React.FC = () => {
 
   // Helper to ensure referrer exists
   const checkReferrerAction = (action: () => void) => {
-    if (!referrer) {
+    if (!user?.referrerCode) {
       setShowReferrerModal(true);
       return;
     }
@@ -73,32 +72,36 @@ export const AffiliateLinks: React.FC = () => {
     });
   };
 
-  const handleDownload = (imageUrl: string, title: string) => {
+  const handleDownload = async (imageUrl: string, title: string) => {
     if (!imageUrl) return;
-    const link = document.createElement('a');
-    link.href = imageUrl;
-    link.download = `${title.replace(/\s+/g, '_')}_asset.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  const handleAddReferrer = async () => {
-      if (!referrerCode) return;
-      const result = await addReferrer(referrerCode);
-      if (result.success) {
-          setShowReferrerModal(false);
-          setReferrerError('');
-      } else {
-          setReferrerError(result.error || "Invalid Referral Code");
-      }
+    try {
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${title.replace(/\s+/g, '_')}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Download failed', error);
+      const link = document.createElement('a');
+      link.href = imageUrl;
+      link.target = '_blank';
+      link.download = `${title.replace(/\s+/g, '_')}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
   };
 
   const activeAssets = campaignAssets.filter(a => a.active);
 
   return (
     <div className="pb-24 pt-0 px-4 max-w-md mx-auto min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
-      <div className="sticky top-0 z-[100] bg-gray-50/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-100/50 dark:border-gray-800/50 -mx-4 px-4 py-3 mb-6 transition-all">
+      <div className="sticky top-0 z-[100] bg-gray-50/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-100/50 dark:border-gray-800/50 -mx-4 px-4 pt-10 pb-3 mb-6 transition-all">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
             <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full transition">
@@ -106,6 +109,13 @@ export const AffiliateLinks: React.FC = () => {
             </button>
             <h1 className="text-xl font-bold ml-2 text-gray-900 dark:text-white tracking-tight">Affiliate Links</h1>
           </div>
+          <button 
+            onClick={() => handleDownload(qrCodeUrl, `QR_${referralCode}`)}
+            className="p-2 text-synergy-blue hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition active:scale-90"
+            title="Download QR Code"
+          >
+            <Download size={24} />
+          </button>
         </div>
       </div>
 
@@ -202,61 +212,9 @@ export const AffiliateLinks: React.FC = () => {
           </div>
       </div>
 
-      {/* REFERRER REQUIRED MODAL - Standardized Premium Style */}
       {showReferrerModal && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center px-6">
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-md animate-in fade-in duration-500" onClick={() => setShowReferrerModal(false)}></div>
-            <div className="bg-white dark:bg-gray-800 w-full max-w-sm rounded-[40px] p-8 shadow-2xl relative z-10 animate-in zoom-in-95 border border-white/10 overflow-hidden">
-                <button 
-                    onClick={() => setShowReferrerModal(false)}
-                    className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 p-2 z-20"
-                >
-                    <X size={24} />
-                </button>
-                
-                <div className="text-center relative z-10">
-                    <div className="w-20 h-20 bg-blue-50 dark:bg-blue-900/20 text-synergy-blue rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm border border-blue-100 dark:border-blue-800">
-                        <UserPlus size={40} />
-                    </div>
-                    <h2 className="text-2xl font-black text-gray-900 dark:text-white mb-2 tracking-tight">Referral Code</h2>
-                    <p className="text-gray-500 dark:text-gray-400 text-sm mb-8 leading-relaxed font-medium">
-                        To access your affiliate tools and QR code, you must first link your account to a referrer.
-                    </p>
-                    
-                    <div className="mb-6 relative">
-                        <input 
-                            value={referrerCode}
-                            onChange={(e) => {
-                                setReferrerCode(e.target.value.toUpperCase());
-                                setReferrerError('');
-                            }}
-                            placeholder="EX. BOSS001"
-                            className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl py-5 px-4 text-center font-black text-2xl uppercase tracking-[0.2em] text-synergy-blue placeholder:font-normal focus:outline-none focus:ring-4 focus:ring-synergy-blue/10 shadow-inner"
-                        />
-                        {referrerError && <p className="text-red-500 text-xs mt-2 font-black uppercase tracking-widest animate-pulse">{referrerError}</p>}
-                    </div>
-
-                    <div className="flex flex-col space-y-3">
-                        <button 
-                            onClick={handleAddReferrer}
-                            disabled={!referrerCode}
-                            className="w-full bg-synergy-blue text-white font-black py-4 rounded-2xl shadow-glow active:scale-95 transition flex items-center justify-center space-x-2 h-14"
-                        >
-                            <Sparkles size={20} />
-                            <span className="uppercase tracking-widest text-xs">Link Referrer</span>
-                        </button>
-                        <button 
-                            onClick={() => setShowReferrerModal(false)}
-                            className="text-[11px] font-black text-gray-400 hover:text-gray-600 transition uppercase tracking-[0.3em] py-2"
-                        >
-                            Cancel
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <ReferralModal onClose={() => setShowReferrerModal(false)} />
       )}
-
     </div>
   );
 };

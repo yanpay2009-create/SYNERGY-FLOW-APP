@@ -76,7 +76,7 @@ export const FloatingToast: React.FC = () => {
 
   // Handler to navigate to Notifications page
   const handleToastClick = () => {
-      navigate('/notifications');
+      navigate('/notifications', { state: { openNotifId: currentToast.relatedId } });
       dismissToast();
   };
 
