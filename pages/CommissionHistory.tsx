@@ -26,6 +26,7 @@ import {
   X
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { Header } from '../components/Header';
 import { UserTier, CommissionTransaction } from '../types';
 
 export const CommissionHistory: React.FC = () => {
@@ -332,11 +333,10 @@ export const CommissionHistory: React.FC = () => {
     
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-950 font-sans pb-10 flex flex-col">
-            <div className="flex items-center px-4 pt-6 mb-2">
-                <button onClick={() => setViewMode('list')} className="p-2 -ml-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition">
-                  <ArrowLeft size={24} />
-                </button>
-            </div>
+            <Header 
+              title="Transaction Details" 
+              onBack={() => setViewMode('list')}
+            />
 
             <div className="flex-1 px-6 flex flex-col items-center justify-center animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div className="relative mb-6">
@@ -471,14 +471,10 @@ export const CommissionHistory: React.FC = () => {
           </div>
       )}
 
-      <div className="sticky top-0 z-[100] bg-gray-50/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-100/50 dark:border-gray-800/50 -mx-4 px-4 pt-12 pb-3 mb-6 transition-all">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full transition">
-              <ArrowLeft size={24} />
-            </button>
-            <h1 className="text-xl font-bold ml-2 text-gray-900 dark:text-white tracking-tight">Income History</h1>
-          </div>
+      <Header 
+        title="Income History" 
+        onBack={() => navigate(-1)}
+        rightElement={
           <button 
             onClick={() => navigate(`/tier-data/Executive`)}
             className="p-2.5 bg-white dark:bg-gray-800 text-amber-500 rounded-full shadow-sm hover:bg-amber-50 dark:hover:bg-amber-900/30 transition border border-amber-100 dark:border-gray-700 active:scale-95"
@@ -486,8 +482,8 @@ export const CommissionHistory: React.FC = () => {
           >
             <Crown size={20} />
           </button>
-        </div>
-      </div>
+        }
+      />
 
       {/* REVENUE DASHBOARD GRID */}
       <div className="grid grid-cols-2 gap-4 mb-6">

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { Header } from '../components/Header';
 import { useApp } from '../context/AppContext';
 import { ArrowLeft, ShieldCheck, Clock, CheckCircle, X, Camera, Lock, Sparkles, RefreshCw, Check, Zap, CreditCard, Globe, FileText, Briefcase, Plus, Image as ImageIcon, Smartphone, Loader2, Scan } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -331,24 +332,19 @@ export const KYC: React.FC = () => {
   }
 
   return (
-    <div className="pb-24 pt-12 px-4 max-w-md mx-auto min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors overflow-hidden">
-      <div className="flex items-center mb-6">
-        <button 
-            onClick={() => {
-                if (kycStep === 'camera') {
-                    stopCamera();
-                } else if (kycStep === 'form') {
-                    setKycStep('select');
-                } else {
-                    navigate(-1);
-                }
-            }} 
-            className="p-2 -ml-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition"
-        >
-          <ArrowLeft size={24} />
-        </button>
-        <h1 className="text-xl font-bold ml-2 text-gray-900 dark:text-white">Identity Verification</h1>
-      </div>
+    <div className="pb-24 pt-0 px-4 max-w-md mx-auto min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors overflow-hidden">
+      <Header 
+        title="Identity Verification" 
+        onBack={() => {
+          if (kycStep === 'camera') {
+            stopCamera();
+          } else if (kycStep === 'form') {
+            setKycStep('select');
+          } else {
+            navigate(-1);
+          }
+        }}
+      />
 
       <canvas ref={canvasRef} className="hidden" />
 

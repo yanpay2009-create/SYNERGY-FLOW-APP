@@ -8,7 +8,7 @@ interface ReferralModalProps {
 }
 
 export const ReferralModal: React.FC<ReferralModalProps> = ({ onClose }) => {
-  const { addReferrer, getPublicProfileByCode } = useApp();
+  const { addReferrer, getPublicProfileByCode, t } = useApp();
   const [referrerCode, setReferrerCode] = useState('');
   const [referrerError, setReferrerError] = useState('');
   const [showScanner, setShowScanner] = useState(false);
@@ -94,7 +94,7 @@ export const ReferralModal: React.FC<ReferralModalProps> = ({ onClose }) => {
                                     {isSearching ? (
                                         <div className="flex flex-col items-center">
                                             <Loader2 size={32} className="text-synergy-blue animate-spin mb-1" />
-                                            <span className="text-[8px] font-black text-synergy-blue uppercase tracking-widest">Searching</span>
+                                            <span className="text-[8px] font-black text-synergy-blue uppercase tracking-widest">{t('ref.searching')}</span>
                                         </div>
                                     ) : (
                                         <div className="relative">
@@ -105,9 +105,9 @@ export const ReferralModal: React.FC<ReferralModalProps> = ({ onClose }) => {
                                 </div>
                             </div>
                             <div className="mt-4">
-                                <h2 className="text-xl font-black text-gray-900 dark:text-white tracking-tight">Referral Code</h2>
+                                <h2 className="text-xl font-black text-gray-900 dark:text-white tracking-tight">{t('ref.title')}</h2>
                                 <p className="text-gray-500 dark:text-gray-400 text-[11px] mt-1 leading-relaxed font-medium max-w-[200px] mx-auto">
-                                    Enter the code of the person who invited you to join Synergy Flow.
+                                    {t('ref.desc')}
                                 </p>
                             </div>
                         </div>
@@ -121,13 +121,13 @@ export const ReferralModal: React.FC<ReferralModalProps> = ({ onClose }) => {
                             setReferrerCode(e.target.value.toUpperCase());
                             setReferrerError('');
                         }}
-                        placeholder="ENTER CODE"
+                        placeholder={t('ref.placeholder')}
                         className="w-full bg-transparent border border-gray-200 dark:border-gray-700 rounded-xl py-5 px-4 text-center font-black text-xl uppercase tracking-[0.2em] text-synergy-blue focus:outline-none focus:ring-4 focus:ring-synergy-blue/10 shadow-inner pr-14"
                     />
                     <button 
                         onClick={() => setShowScanner(true)}
                         className="absolute right-4 top-1/2 -translate-y-1/2 p-2 text-synergy-blue transition-all active:scale-90"
-                        title="Scan QR Code"
+                        title={t('ref.scan_hint')}
                     >
                         <Scan size={20} />
                     </button>
@@ -141,13 +141,13 @@ export const ReferralModal: React.FC<ReferralModalProps> = ({ onClose }) => {
                         className="w-full bg-synergy-blue text-white font-black py-4 rounded-2xl shadow-glow active:scale-95 transition flex items-center justify-center space-x-2 h-14 disabled:opacity-50"
                     >
                         {isLinking ? <Loader2 size={20} className="animate-spin" /> : <UserPlus size={20} />}
-                        <span className="uppercase tracking-widest text-xs">{foundReferrer ? `Link with ${foundReferrer.name.split(' ')[0]}` : 'Link Referrer'}</span>
+                        <span className="uppercase tracking-widest text-xs">{foundReferrer ? `${t('ref.link_with')} ${foundReferrer.name.split(' ')[0]}` : t('ref.link_btn')}</span>
                     </button>
                     <button 
                         onClick={onClose}
                         className="text-[11px] font-black text-gray-400 hover:text-gray-600 transition uppercase tracking-[0.3em] py-2"
                     >
-                        Cancel
+                        {t('btn.cancel')}
                     </button>
                 </div>
             </div>

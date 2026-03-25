@@ -6,7 +6,7 @@ import { UserTier, Product } from '../types';
 import { ProductCard, getTierColors, getTierBadgeStyles, formatSold, calculateRating } from '../components/ProductCard';
 import { CountdownTimer } from '../components/CountdownTimer';
 
-const LiveSalesFeed: React.FC<{ sales: any[] }> = ({ sales }) => {
+const LiveSalesFeed: React.FC<{ sales: any[]; t: any }> = ({ sales, t }) => {
   if (!sales || sales.length === 0) return null;
 
   return (
@@ -17,9 +17,9 @@ const LiveSalesFeed: React.FC<{ sales: any[] }> = ({ sales }) => {
             <Clock className="text-emerald-500" size={18} />
             <span className="absolute -top-1 -right-1 w-2 h-2 bg-emerald-500 rounded-full animate-ping"></span>
           </div>
-          <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-wider">Live Sales Feed</h3>
+          <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-wider">{t('home.live_sales')}</h3>
         </div>
-        <span className="text-[10px] font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-0.5 rounded-full border border-emerald-100 dark:border-emerald-800">Real-time</span>
+        <span className="text-[10px] font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-0.5 rounded-full border border-emerald-100 dark:border-emerald-800">{t('home.real_time')}</span>
       </div>
       <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden relative">
         <div className="space-y-3">
@@ -30,8 +30,8 @@ const LiveSalesFeed: React.FC<{ sales: any[] }> = ({ sales }) => {
                   {sale.name?.charAt(0).toUpperCase() || 'U'}
                 </div>
                 <div>
-                  <p className="text-[11px] font-black text-gray-800 dark:text-gray-100 leading-none">{sale.name || 'Anonymous'}</p>
-                  <p className="text-[9px] text-gray-400 dark:text-gray-500 mt-1 font-medium">Just purchased</p>
+                  <p className="text-[11px] font-black text-gray-800 dark:text-gray-100 leading-none">{sale.name || t('home.anonymous')}</p>
+                  <p className="text-[9px] text-gray-400 dark:text-gray-500 mt-1 font-medium">{t('home.just_purchased')}</p>
                 </div>
               </div>
               <div className="text-right">
@@ -353,7 +353,7 @@ export const Home: React.FC = () => {
             )}
 
             {/* Live Sales Feed */}
-            <LiveSalesFeed sales={liveSales} />
+            <LiveSalesFeed sales={liveSales} t={t} />
 
             <div className="mb-2">
                 <div className="flex justify-between items-center mb-3">

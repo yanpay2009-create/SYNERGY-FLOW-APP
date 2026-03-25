@@ -1,6 +1,7 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
+import { Header } from '../components/Header';
 import { ArrowLeft, Globe, MapPin, Share2, Shield, LogOut, ChevronRight, Lock, Type, Bell } from 'lucide-react';
 
 export const Preferences: React.FC = () => {
@@ -63,16 +64,10 @@ export const Preferences: React.FC = () => {
 
   return (
     <div className="pb-24 pt-0 px-4 max-w-md mx-auto min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
-      <div className="sticky top-0 z-[100] bg-gray-50/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-100/50 dark:border-gray-800/50 -mx-4 px-4 pt-12 pb-3 mb-6 transition-all">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition">
-              <ArrowLeft size={24} />
-            </button>
-            <h1 className="text-xl font-bold ml-2 text-gray-900 dark:text-white tracking-tight">{t('pref.settings')}</h1>
-          </div>
-        </div>
-      </div>
+      <Header 
+        title={t('pref.settings')} 
+        onBack={() => navigate(-1)}
+      />
 
       <div className="mb-6">
         <h3 className="text-xs font-bold text-gray-400 uppercase ml-2 mb-3">{t('pref.general')}</h3>

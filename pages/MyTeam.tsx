@@ -20,6 +20,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { Header } from '../components/Header';
 import { UserTier, TeamMember } from '../types';
 
 export const MyTeam: React.FC = () => {
@@ -117,13 +118,11 @@ export const MyTeam: React.FC = () => {
 
   if (selectedMember) {
     return (
-      <div className="pb-24 pt-12 px-4 max-w-md mx-auto min-h-screen bg-gray-50 animate-in slide-in-from-right duration-300">
-        <div className="flex items-center mb-6">
-          <button onClick={() => setSelectedMember(null)} className="p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-full transition">
-            <ArrowLeft size={24} />
-          </button>
-          <h1 className="text-lg font-bold ml-2">Member Details</h1>
-        </div>
+      <div className="pb-24 pt-0 px-4 max-w-md mx-auto min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+        <Header 
+          title="Member Details" 
+          onBack={() => setSelectedMember(null)}
+        />
 
         <div className="bg-white rounded-[32px] p-8 shadow-soft text-center relative overflow-hidden mb-6 animate-in zoom-in-95 duration-300">
            <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-blue-50 to-transparent z-0"></div>
@@ -188,19 +187,14 @@ export const MyTeam: React.FC = () => {
 
   return (
     <div className="pb-24 pt-0 px-4 max-w-md mx-auto min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
-      <div className="sticky top-0 z-[100] bg-gray-50/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-100/50 dark:border-gray-800/50 -mx-4 px-4 pt-12 pb-3 mb-6 transition-all">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full transition">
-              <ArrowLeft size={24} />
-            </button>
-            <h1 className="text-lg font-bold ml-2 text-gray-900 dark:text-white tracking-tight">My Team</h1>
-          </div>
+      <Header 
+        title="My Team" 
+        rightElement={
           <button onClick={() => navigate('/referrer-info')} className="p-2.5 bg-white dark:bg-gray-800 text-synergy-blue rounded-full shadow-sm hover:bg-blue-50 dark:hover:bg-blue-900/30 transition border border-blue-100 dark:border-gray-700" title="Check Referrer">
             <UserCheck size={20} />
           </button>
-        </div>
-      </div>
+        }
+      />
 
       <div className="grid grid-cols-2 gap-4 mb-6">
         <div className="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm transition-all duration-300 border border-transparent dark:border-gray-700 hover:border-blue-100 dark:hover:border-blue-900/30">

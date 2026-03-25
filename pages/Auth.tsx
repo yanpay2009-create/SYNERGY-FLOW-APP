@@ -139,11 +139,11 @@ export const Auth: React.FC = () => {
                   </div>
 
                   <div className="text-center mb-6">
-                      <h2 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight mb-1">Security Verification</h2>
+                      <h2 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight mb-1">{t('auth.security_verification')}</h2>
                       <p className="text-[13px] text-gray-400 font-medium leading-relaxed max-w-[260px] mx-auto">
                           {isResetFlow 
-                            ? "Verify your identity to reset your account password." 
-                            : "Enter the 6-digit code sent to your device to finalize your account."}
+                            ? t('auth.verify_reset_desc') 
+                            : t('auth.verify_signup_desc')}
                       </p>
                   </div>
               </div>
@@ -175,13 +175,13 @@ export const Auth: React.FC = () => {
               {isVerifying ? (
                   <div className="flex flex-col items-center space-y-3 animate-in zoom-in duration-300">
                       <Loader2 size={32} className="text-synergy-blue animate-spin" />
-                      <p className="text-[10px] font-black text-synergy-blue uppercase tracking-[0.2em]">Verifying Identity...</p>
+                      <p className="text-[10px] font-black text-synergy-blue uppercase tracking-[0.2em]">{t('auth.verifying_id')}</p>
                   </div>
               ) : (
                   <div className="text-center">
-                      <p className="text-[11px] text-gray-400 font-bold mb-4 uppercase tracking-widest">Didn't receive the code?</p>
+                      <p className="text-[11px] text-gray-400 font-bold mb-4 uppercase tracking-widest">{t('auth.didnt_receive')}</p>
                       <button className="text-xs font-black text-synergy-blue hover:underline uppercase tracking-widest px-8 py-2.5 rounded-full bg-blue-50/50 dark:bg-blue-900/20 transition active:scale-95">
-                          Resend Code (59s)
+                          {t('auth.resend_code')} (59s)
                       </button>
                   </div>
               )}
@@ -207,14 +207,14 @@ export const Auth: React.FC = () => {
         <form onSubmit={handleSubmit} className="space-y-1 mt-1">
           {!isLogin && (
             <div className="space-y-0.5 animate-in slide-in-from-top-2 duration-300">
-              <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Username</label>
+              <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">{t('auth.username')}</label>
               <div className="relative">
                 <User className="absolute left-4 top-3.5 text-gray-300" size={18} />
                 <input 
                   type="text" 
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Username"
+                  placeholder={t('auth.username')}
                   className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl py-3 pl-12 pr-4 text-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-synergy-blue/20 transition text-sm font-medium"
                   required={!isLogin}
                 />
@@ -261,7 +261,7 @@ export const Auth: React.FC = () => {
 
           {!isLogin && (
             <div className="space-y-0.5 animate-in slide-in-from-top-2 duration-300">
-              <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Confirm Password</label>
+              <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">{t('auth.confirm_pass')}</label>
               <div className="relative">
                 <ShieldCheck className="absolute left-4 top-3.5 text-gray-300" size={18} />
                 <input 
@@ -283,7 +283,7 @@ export const Auth: React.FC = () => {
               <div className="flex items-start space-x-1.5 mt-1 px-1 text-gray-400 animate-in fade-in slide-in-from-top-1">
                 <AlertCircle size={10} className="mt-0.5 shrink-0" />
                 <p className="text-[9px] font-bold uppercase tracking-tight leading-tight">
-                  Min 6 characters (At least 1 lowercase letter & 1 number)
+                  {t('auth.pass_hint')}
                 </p>
               </div>
             </div>
@@ -309,7 +309,7 @@ export const Auth: React.FC = () => {
         <div className="mt-2">
           <div className="relative flex items-center justify-center mb-4">
             <div className="flex-grow border-t border-gray-100 dark:border-gray-800"></div>
-            <span className="flex-shrink mx-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Or continue with</span>
+            <span className="flex-shrink mx-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('auth.or_continue')}</span>
             <div className="flex-grow border-t border-gray-100 dark:border-gray-800"></div>
           </div>
 
@@ -319,7 +319,7 @@ export const Auth: React.FC = () => {
             className="w-full bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 text-gray-700 dark:text-white font-black py-3.5 rounded-2xl shadow-sm active:scale-[0.98] transition uppercase tracking-[0.2em] text-[10px] flex items-center justify-center space-x-3"
           >
             <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-5 h-5" alt="Google" />
-            <span>Google Account</span>
+            <span>{t('auth.google_account')}</span>
           </button>
         </div>
 
@@ -335,7 +335,7 @@ export const Auth: React.FC = () => {
                     </button>
                 )}
                 <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">
-                  {isLogin ? "New to Synergy?" : "Already a member?"}{" "}
+                  {isLogin ? t('auth.new_to_synergy') : t('auth.already_member')}{" "}
                   <button 
                     type="button"
                     onClick={() => {
@@ -356,7 +356,7 @@ export const Auth: React.FC = () => {
                     className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest hover:text-synergy-blue transition flex items-center space-x-1"
                 >
                     <RefreshCw size={10} />
-                    <span>Forgot Password?</span>
+                    <span>{t('auth.forgot_pass')}</span>
                 </button>
             )}
         </div>
@@ -369,28 +369,28 @@ export const Auth: React.FC = () => {
                   <div className="p-6 border-b border-gray-50 dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-gray-800/50">
                       <div className="flex items-center space-x-2 text-synergy-blue">
                           <FileText size={20} />
-                          <h3 className="font-black text-xs uppercase tracking-[0.2em]">Affiliate Agreement</h3>
+                          <h3 className="font-black text-xs uppercase tracking-[0.2em]">{t('auth.agreement_title')}</h3>
                       </div>
                       <button onClick={() => setShowTermsModal(false)} className="text-gray-300 hover:text-gray-500 transition"><X size={22} /></button>
                   </div>
                   <div className="p-6 overflow-y-auto no-scrollbar flex-1 bg-white dark:bg-gray-900">
                       <div className="space-y-6">
                           <div>
-                              <h4 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-widest mb-2 flex items-center"><ShieldCheck size={14} className="mr-2 text-emerald-500" /> 1. Operational Security</h4>
+                              <h4 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-widest mb-2 flex items-center"><ShieldCheck size={14} className="mr-2 text-emerald-500" /> {t('auth.agreement_sec1_title')}</h4>
                               <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-relaxed font-medium">
-                                  Your account is protected by encryption. Commission tracking is automated via our proprietary Synergy Flow engine to ensure 100% accuracy on every direct and team referral.
+                                  {t('auth.agreement_sec1_desc')}
                               </p>
                           </div>
                           <div>
-                              <h4 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-widest mb-2 flex items-center"><Check size={14} className="mr-2 text-synergy-blue" /> 2. Payout Verification</h4>
+                              <h4 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-widest mb-2 flex items-center"><Check size={14} className="mr-2 text-synergy-blue" /> {t('auth.agreement_sec2_title')}</h4>
                               <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-relaxed font-medium">
-                                  Withdrawals are only enabled for KYC-verified members. The system automatically audits all sales before releasing funds.
+                                  {t('auth.agreement_sec2_desc')}
                               </p>
                           </div>
                           <div>
-                              <h4 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-widest mb-2 flex items-center"><User size={14} className="mr-2 text-purple-500" /> 3. Data Integrity</h4>
+                              <h4 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-widest mb-2 flex items-center"><User size={14} className="mr-2 text-purple-500" /> {t('auth.agreement_sec3_title')}</h4>
                               <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-relaxed font-medium">
-                                  We never share your personal or banking data. All information is used strictly for payout processing and tax compliance.
+                                  {t('auth.agreement_sec3_desc')}
                               </p>
                           </div>
                       </div>
@@ -400,7 +400,7 @@ export const Auth: React.FC = () => {
                         onClick={acceptTerms}
                         className="w-full h-14 bg-synergy-blue text-white font-black rounded-2xl shadow-glow active:scale-[0.98] transition uppercase tracking-[0.2em] text-xs"
                       >
-                          Accept & Continue
+                          {t('cart.terms_accept')}
                       </button>
                   </div>
               </div>
@@ -415,13 +415,13 @@ export const Auth: React.FC = () => {
                     <div className="w-14 h-14 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4">
                         <KeyRound size={28} />
                     </div>
-                    <h3 className="text-xl font-black text-gray-900 dark:text-white mb-2 tracking-tight">Reset Password</h3>
-                    <p className="text-gray-400 text-[11px] mb-6 uppercase font-bold tracking-widest">Set a new strong password.</p>
+                    <h3 className="text-xl font-black text-gray-900 dark:text-white mb-2 tracking-tight">{t('auth.reset_pass_title')}</h3>
+                    <p className="text-gray-400 text-[11px] mb-6 uppercase font-bold tracking-widest">{t('auth.reset_pass_desc')}</p>
                 </div>
                 
                 <form onSubmit={handleResetPassword} className="space-y-4">
                     <div className="space-y-1.5">
-                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">New Password</label>
+                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">{t('auth.new_pass')}</label>
                         <div className="relative">
                             <Lock className="absolute left-4 top-3.5 text-gray-300" size={18} />
                             <input 
@@ -445,7 +445,7 @@ export const Auth: React.FC = () => {
                         type="submit"
                         className="w-full bg-emerald-500 text-white font-black py-4 rounded-2xl shadow-lg shadow-emerald-500/20 text-xs uppercase tracking-[0.2em] active:scale-95 transition-all"
                     >
-                        Save & Sign In
+                        {t('auth.save_signin')}
                     </button>
                 </form>
             </div>

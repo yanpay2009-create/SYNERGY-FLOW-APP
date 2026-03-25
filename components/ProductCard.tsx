@@ -97,7 +97,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isFeatured = 
               {product.stock <= 0 && (
                   <div className="absolute inset-0 flex items-center justify-center z-20">
                       <span className="text-gray-400 dark:text-gray-500 text-xl font-black tracking-tighter opacity-90">
-                          Out of Stock
+                          {t('product.out_of_stock')}
                       </span>
                   </div>
               )}

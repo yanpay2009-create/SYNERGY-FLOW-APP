@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { ArrowLeft, Wallet, CreditCard, QrCode, Check, Plus, Trash2, X, ShieldCheck } from 'lucide-react';
+import { Header } from '../components/Header';
 import { useNavigate } from 'react-router-dom';
 import { PaymentType, CreditCardInfo } from '../types';
 
@@ -67,16 +68,10 @@ export const PaymentSelection: React.FC = () => {
 
   return (
     <div className="pb-24 pt-0 px-4 max-w-md mx-auto min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
-      <div className="sticky top-0 z-[100] bg-gray-50/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-100/50 dark:border-gray-800/50 -mx-4 px-4 pt-16 pb-3 mb-6 transition-all">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full transition">
-              <ArrowLeft size={24} />
-            </button>
-            <h1 className="text-xl font-bold ml-2 text-gray-900 dark:text-white tracking-tight">Payment Method</h1>
-          </div>
-        </div>
-      </div>
+      <Header 
+        title="Payment Method" 
+        onBack={() => navigate(-1)}
+      />
 
       <div className="space-y-4">
         {methods.map((method) => (

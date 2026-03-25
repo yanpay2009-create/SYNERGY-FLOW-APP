@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Facebook, Mail, MessageCircle, ChevronRight, ShieldCheck, CheckCircle2, Info, Lock, ExternalLink } from 'lucide-react';
+import { Header } from '../components/Header';
 import { useApp } from '../context/AppContext';
 
 export const SocialAccounts: React.FC = () => {
@@ -55,18 +56,16 @@ export const SocialAccounts: React.FC = () => {
   };
 
   return (
-    <div className="pb-24 pt-12 px-4 max-w-md mx-auto min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center">
-          <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition">
-            <ArrowLeft size={24} />
-          </button>
-          <h1 className="text-xl font-bold ml-2 text-gray-900 dark:text-white">Social Accounts</h1>
-        </div>
-        <div className="w-10 h-10 bg-white dark:bg-gray-800 rounded-xl flex items-center justify-center text-synergy-blue shadow-sm border border-gray-100 dark:border-gray-700">
-          <Lock size={18} />
-        </div>
-      </div>
+    <div className="pb-24 pt-0 px-4 max-w-md mx-auto min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+      <Header 
+        title="Social Accounts" 
+        onBack={() => navigate(-1)}
+        rightElement={
+          <div className="w-10 h-10 bg-white dark:bg-gray-800 rounded-xl flex items-center justify-center text-synergy-blue shadow-sm border border-gray-100 dark:border-gray-700">
+            <Lock size={18} />
+          </div>
+        }
+      />
 
       <div className="animate-in slide-in-from-bottom-4 duration-500">
         <SocialRow 

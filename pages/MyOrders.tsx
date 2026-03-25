@@ -27,6 +27,7 @@ import {
   ShieldCheck
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { Header } from '../components/Header';
 import { Order, Address, OrderStatus } from '../types';
 
 export const MyOrders: React.FC = () => {
@@ -136,14 +137,9 @@ export const MyOrders: React.FC = () => {
 
   return (
     <div className="pb-24 pt-0 px-4 max-w-md mx-auto min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors duration-300">
-      <div className="sticky top-0 z-[100] bg-gray-50/80 dark:bg-gray-950/80 backdrop-blur-xl border-b border-gray-100/50 dark:border-gray-800/50 -mx-4 px-4 pt-12 pb-3 mb-6 transition-all">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full transition">
-              <ArrowLeft size={24} />
-            </button>
-            <h1 className="text-xl font-bold ml-2 text-gray-900 dark:text-white tracking-tight">My Orders</h1>
-          </div>
+      <Header 
+        title="My Orders" 
+        rightElement={
           <button 
             onClick={() => navigate('/cart')} 
             className="relative p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full transition"
@@ -155,8 +151,8 @@ export const MyOrders: React.FC = () => {
               </span>
             )}
           </button>
-        </div>
-      </div>
+        }
+      />
 
       <div className="flex space-x-2 overflow-x-auto no-scrollbar mb-5 px-1 py-1">
         {['All', 'Pending', 'To Ship', 'Delivered', 'Returns'].map((tab) => (

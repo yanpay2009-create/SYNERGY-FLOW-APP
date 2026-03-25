@@ -5,6 +5,7 @@ import { ShoppingBagIcon } from '../components/ShoppingBagIcon';
 import { Link, useNavigate } from 'react-router-dom';
 import { UserTier } from '../types';
 
+import { Header } from '../components/Header';
 import { ReferralModal } from '../components/ReferralModal';
 
 export const Cart: React.FC = () => {
@@ -128,18 +129,10 @@ export const Cart: React.FC = () => {
 
   return (
     <div className="pb-24 pt-0 px-4 max-w-md mx-auto min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col relative transition-colors duration-300">
-      <div className="sticky top-0 z-[100] bg-gray-50/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-100/50 dark:border-gray-800/50 -mx-4 px-4 pt-16 pb-3 mb-6 transition-all">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <button onClick={() => confirmStep ? setConfirmStep(false) : navigate(-1)} className="p-2 -ml-2 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full transition">
-              <ArrowLeft size={24} />
-            </button>
-            <h1 className="text-xl font-bold ml-2 text-gray-900 dark:text-white tracking-tight">
-                {confirmStep ? 'Confirm Order' : 'Checkout'}
-            </h1>
-          </div>
-        </div>
-      </div>
+      <Header 
+        title={confirmStep ? t('cart.confirm_order') : t('cart.checkout')} 
+        onBack={() => confirmStep ? setConfirmStep(false) : navigate(-1)}
+      />
 
       {cart.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center animate-in fade-in duration-700">
@@ -158,7 +151,7 @@ export const Cart: React.FC = () => {
             <div className="bg-white dark:bg-gray-800 p-6 rounded-[32px] shadow-soft border border-gray-100 dark:border-gray-700">
                 <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest mb-4 flex items-center">
                     <ShoppingBagIcon size={16} className="mr-2 text-synergy-blue" />
-                    Order Summary
+                    {t('cart.order_summary')}
                 </h3>
                 <div className="space-y-3">
                     {cart.map(item => (
@@ -175,7 +168,7 @@ export const Cart: React.FC = () => {
                                         <span className="text-[10px] font-bold text-synergy-blue">{item.quantity}x</span>
                                         <span className="text-xs font-medium text-gray-700 dark:text-gray-300 line-clamp-1 max-w-[120px]">{item.name}</span>
                                     </div>
-                                    <span className="text-[9px] text-gray-400 dark:text-gray-500 font-medium">฿{item.price.toLocaleString()} / unit</span>
+                                    <span className="text-[9px] text-gray-400 dark:text-gray-500 font-medium">฿{item.price.toLocaleString()} / {t('cart.unit')}</span>
                                 </div>
                             </div>
                             <span className="text-xs font-bold text-gray-900 dark:text-white">฿{(item.price * item.quantity).toLocaleString()}</span>
@@ -185,17 +178,17 @@ export const Cart: React.FC = () => {
                 <div className="h-px bg-gray-100 dark:bg-gray-700 my-4"></div>
                 <div className="space-y-2">
                     <div className="flex justify-between text-xs text-gray-500">
-                        <span>Subtotal</span>
+                        <span>{t('cart.subtotal')}</span>
                         <span>฿{subtotal.toLocaleString()}</span>
                     </div>
                     {memberDiscount > 0 && (
                         <div className="flex justify-between text-xs text-synergy-blue font-bold">
-                            <span>Member Discount</span>
+                            <span>{t('cart.member_discount')}</span>
                             <span>-฿{memberDiscount.toLocaleString()}</span>
                         </div>
                     )}
                     <div className="flex justify-between items-center pt-2">
-                        <span className="text-xs font-black text-gray-400 uppercase tracking-widest">Total Amount</span>
+                        <span className="text-xs font-black text-gray-400 uppercase tracking-widest">{t('cart.total_amount')}</span>
                         <span className="text-xl font-black text-synergy-blue">฿{total.toLocaleString()}</span>
                     </div>
                 </div>
@@ -206,7 +199,7 @@ export const Cart: React.FC = () => {
                 <div className="bg-white dark:bg-gray-800 p-4 rounded-2xl border border-gray-100 dark:border-gray-700">
                     <div className="flex items-center space-x-2 mb-2 text-gray-400">
                         <MapPin size={14} />
-                        <span className="text-[10px] font-black uppercase tracking-widest">Delivery Address</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest">{t('cart.delivery_address')}</span>
                     </div>
                     <p className="text-xs font-bold text-gray-800 dark:text-white">{selectedAddress?.name}</p>
                     <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">{selectedAddress?.address}, {selectedAddress?.city}</p>
@@ -215,12 +208,12 @@ export const Cart: React.FC = () => {
                 <div className="bg-white dark:bg-gray-800 p-4 rounded-2xl border border-gray-100 dark:border-gray-700">
                     <div className="flex items-center space-x-2 mb-2 text-gray-400">
                         <CreditCard size={14} />
-                        <span className="text-[10px] font-black uppercase tracking-widest">Payment Method</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest">{t('cart.payment_method')}</span>
                     </div>
                     <div className="flex items-center justify-between">
                         <p className="text-xs font-bold text-gray-800 dark:text-white">
                             {paymentMethod === 'CreditCard' 
-                                ? `Card ending ${selectedPaymentCard?.cardNumber.slice(-4)}` 
+                                ? `${t('cart.card_ending')} ${selectedPaymentCard?.cardNumber.slice(-4)}` 
                                 : paymentMethod}
                         </p>
                         {isWalletPayment && (
@@ -257,7 +250,7 @@ export const Cart: React.FC = () => {
                 >
                     <div className={`absolute inset-0 transition-opacity duration-500 ${isFinalConfirmDisabled ? 'bg-transparent' : 'bg-gradient-to-r from-emerald-500 via-green-500 to-teal-600'}`}></div>
                     <div className="relative w-full flex items-center justify-center space-x-3 text-white">
-                         <span className="uppercase tracking-[0.25em] text-[12px] font-black italic">Confirm Payment</span>
+                         <span className="uppercase tracking-[0.25em] text-[12px] font-black italic">{t('cart.confirm_payment')}</span>
                          <div className="bg-white/20 p-1.5 rounded-full group-hover:translate-x-1.5 transition-transform duration-300 shadow-sm">
                             <Check size={18} strokeWidth={3} />
                          </div>
@@ -267,7 +260,7 @@ export const Cart: React.FC = () => {
                     onClick={() => setConfirmStep(false)}
                     className="w-full mt-4 text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] py-2 hover:text-gray-600 transition"
                 >
-                    Back to Cart
+                    {t('cart.back_to_cart')}
                 </button>
             </div>
         </div>
@@ -278,9 +271,9 @@ export const Cart: React.FC = () => {
                 <div className="flex justify-between items-center mb-2">
                     <div className="flex items-center space-x-2 text-gray-500">
                         <MapPin size={16} />
-                        <span className="text-xs font-bold uppercase tracking-wide">Shipping To</span>
+                        <span className="text-xs font-bold uppercase tracking-wide">{t('cart.shipping_to_label')}</span>
                     </div>
-                    <span className="text-synergy-blue text-xs font-semibold">Change</span>
+                    <span className="text-synergy-blue text-xs font-semibold">{t('cart.change')}</span>
                 </div>
                 {selectedAddress ? (
                     <div>
@@ -288,7 +281,7 @@ export const Cart: React.FC = () => {
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 truncate">{selectedAddress.address}, {selectedAddress.city}</p>
                     </div>
                 ) : (
-                    <p className="text-sm text-red-500 font-medium">Please select an address</p>
+                    <p className="text-sm text-red-500 font-medium">{t('cart.select_address')}</p>
                 )}
              </div>
 
@@ -317,7 +310,7 @@ export const Cart: React.FC = () => {
                         </button>
                       </div>
                       {item.quantity >= item.stock && (
-                        <p className="text-[8px] text-red-500 font-bold uppercase mt-1">Max Stock</p>
+                        <p className="text-[8px] text-red-500 font-bold uppercase mt-1">{t('cart.max_stock')}</p>
                       )}
                     </div>
                   </div>
@@ -332,11 +325,11 @@ export const Cart: React.FC = () => {
                              <CardIcon size={16} />
                          </div>
                          <div>
-                             <p className="text-xs text-gray-400 font-medium">Payment Method</p>
+                             <p className="text-xs text-gray-400 font-medium">{t('cart.payment_method')}</p>
                              <div className="flex items-center space-x-2">
                                 <p className={`text-sm font-bold ${hasInsufficientBalance ? 'text-red-600' : 'text-gray-800 dark:text-gray-100'}`}>
                                     {paymentMethod === 'CreditCard' 
-                                        ? (selectedPaymentCard ? `Card ending ${selectedPaymentCard.cardNumber.slice(-4)}` : 'Select Credit Card') 
+                                        ? (selectedPaymentCard ? `${t('cart.card_ending')} ${selectedPaymentCard.cardNumber.slice(-4)}` : t('cart.select_card')) 
                                         : paymentMethod}
                                 </p>
                                 {isWalletPayment && (
@@ -391,35 +384,35 @@ export const Cart: React.FC = () => {
                  </div>
             </div>
 
-            <div className="mt-6 bg-white dark:bg-gray-800 p-6 rounded-[32px] shadow-soft border border-gray-100 dark:border-gray-700 relative overflow-hidden group">
+            <div className="mt-6 bg-white dark:bg-gray-800 p-6 rounded-[32px] shadow-soft border border-gray-100 dark:border-gray-700 relative overflow-hidden">
                 <div className="space-y-2.5 mb-6 relative z-10">
                     <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
-                        <span>Subtotal</span>
+                        <span>{t('cart.subtotal')}</span>
                         <span>฿{subtotal.toLocaleString()}</span>
                     </div>
                     {memberDiscount > 0 && (
                         <div className="flex justify-between text-xs text-synergy-blue font-bold">
-                            <span>Member Discount ({user?.tier})</span>
+                            <span>{t('cart.member_discount')} ({user?.tier})</span>
                             <span>-฿{memberDiscount.toLocaleString()}</span>
                         </div>
                     )}
                     {couponDiscount > 0 && (
                         <div className="flex justify-between text-xs text-green-500 dark:text-emerald-400 font-bold">
-                            <span>Coupon Discount</span>
+                            <span>{t('cart.discount')}</span>
                             <span>-฿{couponDiscount.toLocaleString()}</span>
                         </div>
                     )}
                     <div className="flex justify-between text-xs text-gray-400 dark:text-gray-500">
-                        <span>VAT (7%)</span>
+                        <span>{t('cart.vat')}</span>
                         <span>฿{vat.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between text-xs text-gray-400 dark:text-gray-500">
-                        <span>Shipping</span>
-                        <span className="text-emerald-500 font-bold uppercase tracking-widest text-[9px]">Free</span>
+                        <span>{t('cart.shipping')}</span>
+                        <span className="text-emerald-500 font-bold uppercase tracking-widest text-[9px]">{t('cart.free')}</span>
                     </div>
                     <div className="h-px bg-gray-100 dark:bg-gray-700 my-3"></div>
                     <div className="flex justify-between items-center">
-                        <span className="text-xs font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">Grand Total</span>
+                        <span className="text-xs font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">{t('cart.grand_total')}</span>
                         <span className="text-2xl font-black text-gray-900 dark:text-white tracking-tighter">฿{total.toLocaleString()}</span>
                     </div>
                 </div>
@@ -437,7 +430,7 @@ export const Cart: React.FC = () => {
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out"></div>
                     
                     <div className="relative w-full flex items-center justify-center space-x-3 text-white">
-                         <span className="uppercase tracking-[0.25em] text-[12px] font-black italic">Checkout</span>
+                         <span className="uppercase tracking-[0.25em] text-[12px] font-black italic">{t('cart.checkout')}</span>
                          <div className="bg-white/20 p-1.5 rounded-full group-hover:translate-x-1.5 transition-transform duration-300 shadow-sm">
                             <ArrowRight size={18} strokeWidth={3} />
                          </div>
@@ -459,8 +452,8 @@ export const Cart: React.FC = () => {
                           <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-500 rounded-full flex items-center justify-center mb-4 shadow-sm animate-bounce">
                               <CheckCircle2 size={32} strokeWidth={3} />
                           </div>
-                          <h2 className="text-base font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest leading-none">Payment Success</h2>
-                          <p className="text-gray-400 dark:text-gray-500 text-[10px] mt-2 font-bold uppercase tracking-tight">Redirecting to My Orders...</p>
+                          <h2 className="text-base font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest leading-none">{t('cart.payment_success')}</h2>
+                          <p className="text-gray-400 dark:text-gray-500 text-[10px] mt-2 font-bold uppercase tracking-tight">{t('cart.redirecting_orders')}</p>
                       </div>
                   )}
 
@@ -469,7 +462,7 @@ export const Cart: React.FC = () => {
                           <div className="w-8 h-8 bg-gray-900 dark:bg-white rounded-lg flex items-center justify-center text-white dark:text-gray-900">
                               <ShieldCheck size={20} />
                           </div>
-                          <span className="text-[11px] font-black text-gray-900 dark:text-white uppercase tracking-widest italic">Confirm Payment</span>
+                          <span className="text-[11px] font-black text-gray-900 dark:text-white uppercase tracking-widest italic">{t('cart.confirm_payment')}</span>
                       </div>
                       {!paymentDone && !isVerifying && (
                           <button onClick={() => setShowCardModal(false)} className="text-gray-300 hover:text-gray-500 transition"><X size={20} /></button>
@@ -486,13 +479,13 @@ export const Cart: React.FC = () => {
                               <div className="w-10 h-7 bg-amber-400/90 rounded-md shadow-inner flex items-center justify-center">
                                   <div className="w-8 h-px bg-black/10"></div>
                               </div>
-                              <span className="text-[10px] font-black uppercase tracking-widest opacity-80">Synergy Platinum</span>
+                              <span className="text-[10px] font-black uppercase tracking-widest opacity-80">{t('cart.card_platinum')}</span>
                           </div>
 
                           <div className="space-y-1">
                               <p className="text-lg font-mono font-black tracking-[0.2em]">**** **** **** {selectedPaymentCard.cardNumber.slice(-4)}</p>
                               <div className="flex justify-between items-center">
-                                  <p className="text-[9px] font-bold uppercase tracking-widest opacity-60">Expires {selectedPaymentCard.expiryDate}</p>
+                                  <p className="text-[9px] font-bold uppercase tracking-widest opacity-60">{t('cart.expires')} {selectedPaymentCard.expiryDate}</p>
                                   <p className="text-[10px] font-mono font-bold">{selectedPaymentCard.brand.toUpperCase()}</p>
                               </div>
                           </div>
@@ -503,7 +496,7 @@ export const Cart: React.FC = () => {
                       {confirmStep && (
                           <div className="animate-in fade-in slide-in-from-bottom-2">
                               <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-2xl mb-6 border border-gray-100 dark:border-gray-700 text-left">
-                                  <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mb-1">Total Amount</p>
+                                  <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mb-1">{t('cart.total_amount')}</p>
                                   <p className="text-2xl font-black text-gray-900 dark:text-white">฿{total.toLocaleString()}</p>
                               </div>
                               <button 
@@ -511,7 +504,7 @@ export const Cart: React.FC = () => {
                                 className="w-full h-16 bg-synergy-blue text-white rounded-full font-black uppercase tracking-[0.2em] text-[11px] shadow-glow shadow-synergy-blue/30 active:scale-[0.98] transition-all flex items-center justify-center space-x-3"
                               >
                                   <Lock size={18} />
-                                  <span>Pay Securely</span>
+                                  <span>{t('cart.pay_securely')}</span>
                               </button>
                           </div>
                       )}
@@ -524,8 +517,8 @@ export const Cart: React.FC = () => {
                                        <div className="w-2 h-2 rounded-full bg-synergy-blue animate-ping"></div>
                                    </div>
                                </div>
-                               <p className="text-[11px] font-black text-synergy-blue uppercase tracking-[0.2em] animate-pulse">Authorizing Card...</p>
-                               <p className="text-[8px] text-gray-400 dark:text-gray-500 mt-2 uppercase font-bold tracking-tighter">Do not close this window</p>
+                               <p className="text-[11px] font-black text-synergy-blue uppercase tracking-[0.2em] animate-pulse">{t('cart.authorizing_card')}</p>
+                               <p className="text-[8px] text-gray-400 dark:text-gray-500 mt-2 uppercase font-bold tracking-tighter">{t('cart.do_not_close')}</p>
                            </div>
                       )}
                   </div>
@@ -544,8 +537,8 @@ export const Cart: React.FC = () => {
                           <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-500 rounded-full flex items-center justify-center mb-3 shadow-sm animate-bounce">
                               <CheckCircle2 size={24} strokeWidth={3} />
                           </div>
-                          <h2 className="text-sm font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest leading-none">Payment Success</h2>
-                          <p className="text-gray-400 dark:text-gray-500 text-[9px] mt-1.5 font-bold uppercase tracking-tight">Redirecting to My Orders...</p>
+                          <h2 className="text-sm font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest leading-none">{t('cart.payment_success')}</h2>
+                          <p className="text-gray-400 dark:text-gray-500 text-[9px] mt-1.5 font-bold uppercase tracking-tight">{t('cart.redirecting_orders')}</p>
                       </div>
                   )}
 
@@ -573,7 +566,7 @@ export const Cart: React.FC = () => {
                   </div>
 
                   <div className="space-y-1 mb-6">
-                      <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">Total Amount to Pay</p>
+                      <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">{t('cart.total_amount')}</p>
                       <h2 className="text-2xl font-black text-gray-900 dark:text-white">฿{total.toLocaleString()}</h2>
                   </div>
 
@@ -582,14 +575,14 @@ export const Cart: React.FC = () => {
                           {isVerifying ? (
                               <>
                                 <span className="w-1 h-1 rounded-full bg-blue-500"></span>
-                                <span>Verifying Transaction...</span>
+                                <span>{t('cart.verifying_transaction')}</span>
                               </>
                           ) : (
-                              <span>Waiting for payment...</span>
+                              <span>{t('cart.waiting_payment')}</span>
                           )}
                       </div>
                       <p className="text-[8px] text-gray-400 leading-relaxed max-w-[180px] uppercase font-bold tracking-tight">
-                          Please scan the QR code within 5 minutes. The system will verify automatically.
+                          {t('cart.scan_qr_hint')}
                       </p>
                   </div>
               </div>

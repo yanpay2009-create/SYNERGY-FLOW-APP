@@ -183,7 +183,8 @@ export const Account: React.FC = () => {
           bgLight: 'bg-amber-50 dark:bg-amber-900/30', 
           progress: 'bg-gradient-to-r from-amber-400 to-orange-600 shadow-[0_0_15px_rgba(245,158,11,0.4)]', 
           decoration: 'from-amber-400/20', 
-          icon: Crown 
+          icon: Crown,
+          label: t('account.executive')
         };
       case UserTier.BUILDER:
         return { 
@@ -194,7 +195,8 @@ export const Account: React.FC = () => {
           bgLight: 'bg-purple-50 dark:bg-purple-900/30', 
           progress: 'bg-gradient-to-r from-purple-700 to-indigo-900 shadow-[0_0_15px_rgba(126,34,206,0.4)]', 
           decoration: 'from-purple-700/20', 
-          icon: Zap 
+          icon: Zap,
+          label: t('account.builder')
         };
       case UserTier.MARKETER: 
         return { 
@@ -205,7 +207,8 @@ export const Account: React.FC = () => {
           bgLight: 'bg-pink-50 dark:bg-pink-900/30', 
           progress: 'bg-pink-500 shadow-[0_0_15px_rgba(236,72,153,0.4)]', 
           decoration: 'from-pink-400/20', 
-          icon: BarChart3 
+          icon: BarChart3,
+          label: t('account.marketer')
         };
       default:
         return { 
@@ -216,7 +219,8 @@ export const Account: React.FC = () => {
           bgLight: 'bg-blue-50 dark:bg-blue-900/30', 
           progress: 'bg-synergy-blue shadow-[0_0_15px_rgba(0,181,255,0.4)]', 
           decoration: 'from-synergy-blue/20', 
-          icon: UserCog 
+          icon: UserCog,
+          label: t('account.starter')
         };
     }
   };
@@ -369,7 +373,7 @@ export const Account: React.FC = () => {
           <div className="absolute top-8 right-6 z-20">
               <div className="bg-white/20 backdrop-blur-md border border-white/30 rounded-full px-4 py-1.5 flex items-center shadow-lg animate-in fade-in slide-in-from-right-4 duration-700">
                   <span className="text-[10px] font-black text-white tracking-widest uppercase italic">
-                      {user.tier} AFFILIATE
+                      {user.tier} {t('account.affiliate')}
                   </span>
               </div>
           </div>
@@ -391,7 +395,7 @@ export const Account: React.FC = () => {
                     <input type="number" pattern="[0-9]*" inputMode="numeric" autoFocus placeholder="000000" className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-3xl py-6 text-center text-4xl font-black text-synergy-blue tracking-[0.3em] outline-none focus:ring-2 focus:ring-synergy-blue/10" value={recoveryOtp} onChange={(e) => handleVerifyRecoveryOtp(e.target.value)} disabled={isVerifyingOtp} />
                     {isVerifyingOtp && (
                         <div className="flex items-center space-x-2 text-synergy-blue animate-pulse">
-                            <Loader2 size={16} className="animate-spin" /><span className="text-[10px] font-black uppercase tracking-widest">Validating...</span>
+                            <Loader2 size={16} className="animate-spin" /><span className="text-[10px] font-black uppercase tracking-widest">{t('account.validating')}</span>
                         </div>
                     )}
                   </div>
@@ -404,7 +408,7 @@ export const Account: React.FC = () => {
                     </div>
                     {pinFlow === 'verify' && (
                         <button onClick={handleForgotPin} className="mb-8 flex items-center space-x-2 text-[10px] font-black text-synergy-blue uppercase tracking-widest hover:underline transition">
-                        <RefreshCw size={12} /><span>Forgot Security PIN?</span>
+                        <RefreshCw size={12} /><span>{t('account.forgot_pin')}</span>
                         </button>
                     )}
                     <input type="number" pattern="[0-9]*" inputMode="numeric" autoFocus className="opacity-0 absolute inset-0 h-full w-full cursor-pointer z-10" value={pin} onChange={(e) => handlePinInput(e.target.value)} />
@@ -448,7 +452,7 @@ export const Account: React.FC = () => {
           <div onClick={() => navigate('/commissions')} className="w-full text-left bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-xl p-6 mb-4 shadow-soft dark:shadow-none border border-white/60 dark:border-gray-700 relative overflow-hidden group transition-all duration-200 cursor-pointer active:scale-[0.98]">
             <div className="text-center mb-6 relative z-10">
                 <div className={`inline-flex items-center space-x-2 ${colors.bgLight} px-3 py-1.5 rounded-full mb-2 border border-white/50 dark:border-gray-600 shadow-sm`}>
-                    <span className={`text-[10px] ${colors.text} font-black uppercase tracking-wider`}>Today's Earnings</span>
+                    <span className={`text-[10px] ${colors.text} font-black uppercase tracking-wider`}>{t('account.earnings_today')}</span>
                 </div>
                 <div className="h-10 flex flex-col items-center justify-center">
                     <h2 className={`text-2xl font-black ${colors.text} tracking-tight leading-none`}>฿{(Math.floor(animatedEarnings) || 0).toLocaleString()}</h2>
@@ -459,10 +463,10 @@ export const Account: React.FC = () => {
                      <div className={`h-full ${colors.progress} rounded-full relative transition-all duration-1000 ease-out`} style={{ width: `${globalProgress}%` }}><div className="absolute right-0 top-0 bottom-0 w-2 bg-white/50 rounded-full"></div></div>
                 </div>
                 <div className="flex justify-between text-[9px] font-black text-gray-400 dark:text-gray-500 px-1 tracking-widest uppercase">
-                    <span className={user.tier === UserTier.STARTER ? 'text-synergy-blue' : ''}>Starter</span>
-                    <span className={user.tier === UserTier.MARKETER ? 'text-pink-600' : ''}>Marketer</span>
-                    <span className={user.tier === UserTier.BUILDER ? 'text-purple-700 font-black' : ''}>Builder</span>
-                    <span className={user.tier === UserTier.EXECUTIVE ? 'text-amber-600 font-black' : ''}>Executive</span>
+                    <span className={user.tier === UserTier.STARTER ? 'text-synergy-blue' : ''}>{t('account.starter')}</span>
+                    <span className={user.tier === UserTier.MARKETER ? 'text-pink-600' : ''}>{t('account.marketer')}</span>
+                    <span className={user.tier === UserTier.BUILDER ? 'text-purple-700 font-black' : ''}>{t('account.builder')}</span>
+                    <span className={user.tier === UserTier.EXECUTIVE ? 'text-amber-600 font-black' : ''}>{t('account.executive')}</span>
                 </div>
             </div>
             <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-blue-100/50 dark:from-blue-900/20 to-transparent rounded-bl-[100px] pointer-events-none"></div>
