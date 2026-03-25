@@ -1,12 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
+import { Header } from '../components/Header';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Shield } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 export const ChangePin: React.FC = () => {
   const navigate = useNavigate();
-  const { user, updateUserSecurity, showToast } = useApp();
+  const { user, updateUserSecurity, showToast, t } = useApp();
   const [step, setStep] = useState<'verify' | 'new' | 'confirm'>('verify');
   const [pin, setPin] = useState('');
   const [newPin, setNewPin] = useState('');
@@ -70,42 +71,43 @@ export const ChangePin: React.FC = () => {
 
   return (
     <div 
-      className="bg-gray-50 flex flex-col items-center justify-center px-6 max-w-md mx-auto relative overflow-y-auto"
+      className="bg-gray-50 dark:bg-gray-900 flex flex-col items-center px-6 max-w-md mx-auto relative overflow-y-auto transition-colors duration-300"
       style={{ minHeight: initialHeight ? `${initialHeight}px` : '100vh' }}
     >
-      <div className="absolute top-12 left-4">
-        <button onClick={() => navigate(-1)} className="p-2 text-gray-600 hover:bg-gray-100 rounded-full transition">
-          <ArrowLeft size={24} />
-        </button>
-      </div>
-
-      <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center text-synergy-blue shadow-lg mb-6 relative pointer-events-none">
-        <Shield size={32} />
-      </div>
-      
-      <h2 className="text-xl font-bold text-gray-900 mb-2 relative pointer-events-none">{getTitle()}</h2>
-      <p className="text-sm text-gray-500 mb-8 relative pointer-events-none text-center">
-        Enter your 6-digit security PIN to continue.
-      </p>
-      
-      <div className="flex space-x-4 mb-8 relative pointer-events-none">
-        {[...Array(6)].map((_, i) => (
-          <div 
-            key={i} 
-            className={`w-4 h-4 rounded-full transition-all duration-300 ${i < pin.length ? 'bg-synergy-blue scale-110' : 'bg-gray-200'} ${error ? 'bg-red-500' : ''}`}
-          />
-        ))}
-      </div>
-
-      <input 
-          type="text" 
-          pattern="\d*" 
-          inputMode="numeric"
-          autoFocus
-          className="opacity-0 absolute inset-0 h-full w-full cursor-pointer z-10"
-          value={pin}
-          onChange={(e) => handlePinInput(e.target.value)}
+      <Header 
+        title={getTitle()} 
+        onBack={() => navigate(-1)}
       />
+
+      <div className="flex-1 flex flex-col items-center justify-center w-full pb-24">
+        <div className="w-16 h-16 bg-white dark:bg-gray-800 rounded-full flex items-center justify-center text-synergy-blue shadow-lg mb-6 relative pointer-events-none border border-transparent dark:border-gray-700">
+          <Shield size={32} />
+        </div>
+        
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2 relative pointer-events-none">{getTitle()}</h2>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-8 relative pointer-events-none text-center">
+          Enter your 6-digit security PIN to continue.
+        </p>
+        
+        <div className="flex space-x-4 mb-8 relative pointer-events-none">
+          {[...Array(6)].map((_, i) => (
+            <div 
+              key={i} 
+              className={`w-4 h-4 rounded-full transition-all duration-300 ${i < pin.length ? 'bg-synergy-blue scale-110' : 'bg-gray-200 dark:bg-gray-700'} ${error ? 'bg-red-500' : ''}`}
+            />
+          ))}
+        </div>
+
+        <input 
+            type="text" 
+            pattern="\d*" 
+            inputMode="numeric"
+            autoFocus
+            className="opacity-0 absolute inset-0 h-full w-full cursor-pointer z-10"
+            value={pin}
+            onChange={(e) => handlePinInput(e.target.value)}
+        />
+      </div>
     </div>
   );
 };

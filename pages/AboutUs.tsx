@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Globe, Mail, Shield, FileText, ChevronRight } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
+import { Header } from '../components/Header';
+
 export const AboutUs: React.FC = () => {
   const navigate = useNavigate();
-  const { systemSettings } = useApp();
+  const { systemSettings, t } = useApp();
   const { logo } = systemSettings;
   const contactLinks = systemSettings?.contactLinks || { line: '', phone: '', email: '', website: '', terms: '', privacy: '' };
 
@@ -32,16 +34,10 @@ export const AboutUs: React.FC = () => {
 
   return (
     <div className="pb-24 pt-0 px-4 max-w-md mx-auto min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
-      <div className="sticky top-0 z-[100] bg-gray-50/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-100/50 dark:border-gray-800/50 -mx-4 px-4 pt-16 pb-3 mb-6 transition-all">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full transition">
-              <ArrowLeft size={24} />
-            </button>
-            <h1 className="text-xl font-bold ml-2 text-gray-900 dark:text-white tracking-tight">About Us</h1>
-          </div>
-        </div>
-      </div>
+      <Header 
+        title={t('menu.about_us')} 
+        onBack={() => navigate(-1)}
+      />
 
       <div className="flex flex-col items-center justify-center text-center mb-10 mt-4">
         {/* Transparent Logo Container with Sharper Corners */}

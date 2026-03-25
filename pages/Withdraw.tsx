@@ -424,6 +424,7 @@ export const Withdraw: React.FC = () => {
         title="Withdraw Funds" 
         onBack={() => navigate(-1)}
       />
+
       {isProcessing && (
           <div className="fixed inset-0 z-[120] bg-white/90 dark:bg-gray-950/90 backdrop-blur-md flex flex-col items-center justify-center">
               <Loader2 size={64} className="text-synergy-blue animate-spin" />
@@ -470,17 +471,6 @@ export const Withdraw: React.FC = () => {
               />
           </div>
       )}
-
-      <div className="sticky top-0 z-[100] bg-gray-50/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-100/50 dark:border-gray-800/50 -mx-4 px-4 pt-16 pb-3 mb-6 transition-all">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full transition">
-              <ArrowLeft size={24} />
-            </button>
-            <h1 className="text-xl font-bold ml-2 text-gray-900 dark:text-white tracking-tight">Withdraw Funds</h1>
-          </div>
-        </div>
-      </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm mb-6 border border-transparent dark:border-gray-700">
             <div className="flex items-center space-x-2 mb-2">

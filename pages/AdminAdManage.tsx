@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Plus, Layout, Trash2, Camera, Link as LinkIcon, Save, Eye, EyeOff, Image as ImageIcon, Sparkles, MapPin, Clock, X } from 'lucide-react';
+import { Header } from '../components/Header';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 
@@ -76,16 +77,16 @@ export const AdminAdManage: React.FC = () => {
   };
 
   return (
-    <div className="pb-24 pt-16 px-4 max-w-md mx-auto min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center">
-            <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-600 dark:text-gray-400">
-                <ArrowLeft size={24} />
-            </button>
-            <h1 className="text-xl font-bold ml-2">Ads & Banners</h1>
-        </div>
-        <button onClick={handleAddNew} className="p-2 bg-indigo-500 text-white rounded-full shadow-lg active:scale-95 transition-transform"><Plus size={20} /></button>
-      </div>
+    <div className="pb-24 pt-0 px-4 max-w-md mx-auto min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+      <Header 
+        title="Ads & Banners" 
+        onBack={() => navigate(-1)}
+        rightElement={
+          <button onClick={handleAddNew} className="p-2 bg-indigo-500 text-white rounded-full shadow-lg active:scale-95 transition-transform">
+            <Plus size={20} />
+          </button>
+        }
+      />
 
       <div className="space-y-6">
           {ads.map(ad => (

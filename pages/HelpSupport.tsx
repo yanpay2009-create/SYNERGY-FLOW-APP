@@ -3,6 +3,8 @@ import { ArrowLeft, MessageCircle, Phone, Mail, ChevronDown, ChevronUp } from 'l
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 
+import { Header } from '../components/Header';
+
 const FAQItem: React.FC<{ item: { q: string, a: string } }> = ({ item }) => {
   const [isOpen, setIsOpen] = useState(false);
   return (
@@ -25,7 +27,7 @@ const FAQItem: React.FC<{ item: { q: string, a: string } }> = ({ item }) => {
 
 export const HelpSupport: React.FC = () => {
   const navigate = useNavigate();
-  const { systemSettings, showToast } = useApp();
+  const { systemSettings, showToast, t } = useApp();
   const contactLinks = systemSettings?.contactLinks || { line: '', phone: '', email: '', website: '', terms: '', privacy: '' };
 
   const faqs = [
@@ -70,16 +72,10 @@ export const HelpSupport: React.FC = () => {
 
   return (
     <div className="pb-24 pt-0 px-4 max-w-md mx-auto min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
-      <div className="sticky top-0 z-[100] bg-gray-50/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-100/50 dark:border-gray-800/50 -mx-4 px-4 pt-12 pb-3 mb-6 transition-all">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full transition">
-              <ArrowLeft size={24} />
-            </button>
-            <h1 className="text-xl font-bold ml-2 text-gray-900 dark:text-white tracking-tight">Help & Support</h1>
-          </div>
-        </div>
-      </div>
+      <Header 
+        title={t('menu.help_support')} 
+        onBack={() => navigate(-1)}
+      />
 
       <div className="mb-6">
         <h2 className="text-sm font-bold text-gray-400 uppercase mb-3 ml-1">Contact Us</h2>

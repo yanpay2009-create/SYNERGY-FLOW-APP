@@ -8,6 +8,7 @@ import {
   Layout, Megaphone, Monitor, ChevronRight, ChevronLeft, RotateCcw, Truck, AlertTriangle
 } from 'lucide-react';
 import { ShoppingBagIcon } from '../components/ShoppingBagIcon';
+import { Header } from '../components/Header';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { OrderStatus, UserTier, Order, CommissionTransaction, FeedItem, TeamMember } from '../types';
@@ -356,19 +357,17 @@ export const AdminDashboard: React.FC = () => {
   };
 
   return (
-    <div className="pb-24 pt-16 px-4 max-w-md mx-auto min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300 font-sans">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center">
-            <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-600 dark:text-gray-400">
-            <ArrowLeft size={24} />
-            </button>
-            <h1 className="text-xl font-black ml-2 text-gray-900 dark:text-white tracking-tight">Admin System</h1>
-        </div>
-        <div className="flex items-center space-x-2 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-1.5 rounded-xl border border-emerald-100 dark:border-emerald-800 shadow-sm">
+    <div className="pb-24 pt-0 px-4 max-w-md mx-auto min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300 font-sans">
+      <Header 
+        title="Admin System" 
+        onBack={() => navigate(-1)}
+        rightElement={
+          <div className="flex items-center space-x-2 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-1.5 rounded-xl border border-emerald-100 dark:border-emerald-800 shadow-sm">
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
             <span className="text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">System Live</span>
-        </div>
-      </div>
+          </div>
+        }
+      />
 
       <div className="grid grid-cols-2 gap-4 mb-8">
           <div 

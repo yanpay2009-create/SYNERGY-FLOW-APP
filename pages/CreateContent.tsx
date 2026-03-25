@@ -3,6 +3,7 @@ import { useApp } from '../context/AppContext';
 import { ArrowLeft, Wand2, Image as ImageIcon, Send, Sparkles, X, AlertTriangle, Loader2, Video, Film, Clock, CheckCircle2, Layers, Megaphone, Layout, Trophy, PlusSquare, User, Trash2, Edit3, ChevronRight, Calendar, Box, Copy, Check, ShoppingBag } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { GoogleGenAI } from "@google/genai";
+import { Header } from '../components/Header';
 
 export const CreateContent: React.FC = () => {
   const { createPost, updateFeedPost, deleteFeedPost, orders, feed, user, products, showToast } = useApp();
@@ -467,15 +468,10 @@ export const CreateContent: React.FC = () => {
 
   return (
     <div className="pb-20 pt-0 px-4 max-w-md mx-auto min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
-      <div className="sticky top-0 z-[100] bg-gray-50/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-100/50 dark:border-gray-800/50 -mx-4 px-4 pt-16 pb-3 mb-6 transition-all">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-              <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full transition">
-                <ArrowLeft size={24} />
-              </button>
-              <h1 className="text-xl font-bold ml-2 text-gray-900 dark:text-white tracking-tight">Content Studio</h1>
-          </div>
-          
+      <Header 
+        title="Content Studio" 
+        onBack={() => navigate(-1)}
+        rightElement={
           <div 
               onClick={() => setShowContentList(true)}
               className="relative group cursor-pointer active:scale-95 transition-transform"
@@ -495,8 +491,8 @@ export const CreateContent: React.FC = () => {
                   </div>
               )}
           </div>
-        </div>
-      </div>
+        }
+      />
 
       <div className="space-y-6">
         <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*,video/*" className="hidden" />

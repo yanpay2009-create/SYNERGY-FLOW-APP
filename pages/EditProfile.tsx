@@ -3,6 +3,7 @@
 import React, { useState, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import { ArrowLeft, Save, Camera } from 'lucide-react';
+import { Header } from '../components/Header';
 import { useNavigate } from 'react-router-dom';
 
 export const EditProfile: React.FC = () => {
@@ -78,13 +79,11 @@ export const EditProfile: React.FC = () => {
   };
 
   return (
-    <div className="pb-24 pt-12 px-4 max-w-md mx-auto min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
-      <div className="flex items-center mb-6">
-        <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition">
-          <ArrowLeft size={24} />
-        </button>
-        <h1 className="text-xl font-bold ml-2 text-gray-900 dark:text-white">Edit Profile</h1>
-      </div>
+    <div className="pb-24 pt-0 px-4 max-w-md mx-auto min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+      <Header 
+        title="Edit Profile" 
+        onBack={() => navigate(-1)}
+      />
 
       <div className="bg-white dark:bg-gray-800 p-6 rounded-[32px] shadow-soft dark:shadow-none border border-transparent dark:border-gray-700">
          <div className="flex justify-center mb-8">

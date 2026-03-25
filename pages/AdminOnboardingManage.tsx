@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { ArrowLeft, Plus, Monitor, Trash2, Camera, Type, Save, FileText } from 'lucide-react';
+import { Header } from '../components/Header';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 
@@ -29,22 +30,20 @@ export const AdminOnboardingManage: React.FC = () => {
   };
 
   return (
-    <div className="pb-24 pt-16 px-4 max-w-md mx-auto min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center">
-            <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-600 dark:text-gray-400">
-                <ArrowLeft size={24} />
-            </button>
-            <h1 className="text-xl font-bold ml-2 text-gray-900 dark:text-white">Onboarding Slides</h1>
-        </div>
-        <button 
+    <div className="pb-24 pt-0 px-4 max-w-md mx-auto min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+      <Header 
+        title="Onboarding Slides" 
+        onBack={() => navigate(-1)}
+        rightElement={
+          <button 
             onClick={handleAddNew} 
             className="p-2 bg-indigo-500 text-white rounded-full shadow-lg hover:bg-indigo-600 active:scale-90 transition-all"
             title="Add New Slide"
-        >
+          >
             <Plus size={20} />
-        </button>
-      </div>
+          </button>
+        }
+      />
 
       <div className="space-y-6">
           {onboardingSlides.map((slide, index) => (

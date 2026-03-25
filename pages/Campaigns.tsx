@@ -3,8 +3,10 @@ import { useApp } from '../context/AppContext';
 import { ArrowLeft, Search, Copy, Check, Megaphone, Tag, Percent, Info, ExternalLink, Download } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
+import { Header } from '../components/Header';
+
 export const Campaigns: React.FC = () => {
-  const { campaignAssets, user } = useApp();
+  const { campaignAssets, user, t } = useApp();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
@@ -61,13 +63,11 @@ export const Campaigns: React.FC = () => {
   };
 
   return (
-    <div className="pb-24 pt-16 px-4 max-w-md mx-auto min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
-      <div className="flex items-center mb-6">
-        <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition">
-          <ArrowLeft size={24} />
-        </button>
-        <h1 className="text-xl font-bold ml-2 text-gray-900 dark:text-white">Campaigns</h1>
-      </div>
+    <div className="pb-24 pt-0 px-4 max-w-md mx-auto min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+      <Header 
+        title={t('menu.campaigns')} 
+        onBack={() => navigate(-1)}
+      />
 
       <div className="mb-6 space-y-4">
         <div className="flex items-center bg-white dark:bg-gray-800 rounded-2xl px-4 py-3 shadow-sm border border-gray-100 dark:border-gray-700">

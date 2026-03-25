@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { Header } from '../components/Header';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, ChevronRight, User, ShieldCheck, Landmark } from 'lucide-react';
 import { useApp } from '../context/AppContext';
@@ -39,13 +40,11 @@ export const PersonalInfo: React.FC = () => {
   if (!user || !isSecurityUnlocked) return null;
 
   return (
-    <div className="pb-24 pt-12 px-4 max-w-md mx-auto min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
-      <div className="flex items-center mb-6">
-        <button onClick={() => navigate('/account')} className="p-2 -ml-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition">
-          <ArrowLeft size={24} />
-        </button>
-        <h1 className="text-xl font-bold ml-2 text-gray-900 dark:text-white">Personal Information</h1>
-      </div>
+    <div className="pb-24 pt-0 px-4 max-w-md mx-auto min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+      <Header 
+        title="Personal Information" 
+        onBack={() => navigate('/account')}
+      />
 
       <div className="animate-in slide-in-from-bottom-4 duration-500">
          <MenuLink to="/edit-profile" icon={User} title="Edit Profile" desc="Name, Email, Phone Number" />

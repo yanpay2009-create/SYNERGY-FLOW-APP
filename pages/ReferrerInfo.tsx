@@ -3,11 +3,12 @@ import { useApp } from '../context/AppContext';
 import { ArrowLeft, MessageCircle, Phone, Copy, Check, UserCheck, UserPlus, Search, X, Scan, ChevronLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
+import { Header } from '../components/Header';
 import { UserTier } from '../types';
 import { QRScanner } from '../components/QRScanner';
 
 export const ReferrerInfo: React.FC = () => {
-  const { referrer, user, addReferrer, language, showToast } = useApp();
+  const { referrer, user, addReferrer, language, showToast, t } = useApp();
   const navigate = useNavigate();
   const [copied, setCopied] = useState<string | null>(null);
   const [inputCode, setInputCode] = useState('');
@@ -54,12 +55,10 @@ export const ReferrerInfo: React.FC = () => {
   if (!user?.referrerCode) {
     return (
       <div className="pb-24 pt-0 px-4 max-w-md mx-auto min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors duration-300">
-        <div className="p-4 flex items-center border-b border-gray-100 dark:border-gray-800 sticky top-0 bg-gray-50/80 dark:bg-gray-950/80 backdrop-blur-md z-10 -mx-4 pt-12 pb-3">
-          <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full transition">
-            <ArrowLeft size={24} />
-          </button>
-          <h1 className="text-lg font-bold ml-2 text-gray-900 dark:text-white tracking-tight">My Referrer</h1>
-        </div>
+        <Header 
+          title={t('menu.my_referrer')} 
+          onBack={() => navigate(-1)}
+        />
 
         <div className="mt-8 bg-white dark:bg-gray-900 rounded-[40px] p-8 shadow-xl shadow-gray-200/50 dark:shadow-none border border-gray-100 dark:border-gray-800 text-center">
           <div className="w-24 h-24 bg-blue-50 dark:bg-blue-900/20 text-synergy-blue rounded-full flex items-center justify-center mx-auto mb-8">
@@ -129,16 +128,10 @@ export const ReferrerInfo: React.FC = () => {
 
   return (
     <div className="pb-24 pt-0 px-4 max-w-md mx-auto min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors" lang={language}>
-      <div className="sticky top-0 z-[100] bg-gray-50/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-100/50 dark:border-gray-800/50 -mx-4 px-4 pt-16 pb-3 mb-6 transition-all">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full transition">
-              <ArrowLeft size={24} />
-            </button>
-            <h1 className="text-lg font-bold ml-2 text-gray-900 dark:text-white tracking-tight">My Referrer</h1>
-          </div>
-        </div>
-      </div>
+      <Header 
+        title={t('menu.my_referrer')} 
+        onBack={() => navigate(-1)}
+      />
 
       <div className="bg-white dark:bg-gray-800 rounded-[32px] p-8 shadow-soft dark:shadow-none text-center relative overflow-hidden mb-6 animate-in zoom-in-95 duration-300 border border-transparent dark:border-gray-700">
          <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-blue-50 dark:from-blue-900/20 to-transparent z-0"></div>
