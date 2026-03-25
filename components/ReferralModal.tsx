@@ -54,9 +54,9 @@ export const ReferralModal: React.FC<ReferralModalProps> = ({ onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center px-6">
-        <div className="absolute inset-0 bg-black/60 backdrop-blur-md animate-in fade-in duration-500" onClick={onClose}></div>
-        <div className="bg-white dark:bg-gray-800 w-full max-w-sm rounded-[40px] p-8 shadow-2xl relative z-10 animate-in zoom-in-95 border border-white/10 overflow-hidden">
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center px-6 pointer-events-none">
+        <div className="absolute inset-0 pointer-events-auto bg-transparent" onClick={onClose}></div>
+        <div className="bg-white dark:bg-gray-950 w-full max-w-sm rounded-[40px] p-8 shadow-2xl relative z-10 animate-in zoom-in-95 border border-white/10 overflow-hidden pointer-events-auto">
             <button 
                 onClick={onClose}
                 className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 p-2 z-20"
@@ -90,7 +90,7 @@ export const ReferralModal: React.FC<ReferralModalProps> = ({ onClose }) => {
                     ) : (
                         <div className="animate-in fade-in duration-500">
                             <div className="w-24 h-24 mx-auto relative">
-                                <div className="w-24 h-24 rounded-full bg-gray-50 dark:bg-gray-900/50 flex items-center justify-center border-4 border-dashed border-gray-200 dark:border-gray-800 shadow-inner overflow-hidden">
+                                <div className="w-24 h-24 rounded-full bg-transparent flex items-center justify-center border-4 border-dashed border-gray-200 dark:border-gray-800 shadow-inner overflow-hidden">
                                     {isSearching ? (
                                         <div className="flex flex-col items-center">
                                             <Loader2 size={32} className="text-synergy-blue animate-spin mb-1" />
@@ -122,7 +122,7 @@ export const ReferralModal: React.FC<ReferralModalProps> = ({ onClose }) => {
                             setReferrerError('');
                         }}
                         placeholder="ENTER CODE"
-                        className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-xl py-5 px-4 text-center font-black text-xl uppercase tracking-[0.2em] text-synergy-blue focus:outline-none focus:ring-4 focus:ring-synergy-blue/10 shadow-inner pr-14"
+                        className="w-full bg-transparent border border-gray-200 dark:border-gray-700 rounded-xl py-5 px-4 text-center font-black text-xl uppercase tracking-[0.2em] text-synergy-blue focus:outline-none focus:ring-4 focus:ring-synergy-blue/10 shadow-inner pr-14"
                     />
                     <button 
                         onClick={() => setShowScanner(true)}

@@ -125,20 +125,20 @@ export const Auth: React.FC = () => {
 
   if (authStep === 'otp') {
       return (
-          <div className="w-full bg-white dark:bg-gray-900 p-8 rounded-[40px] shadow-2xl relative animate-in fade-in duration-500">
+          <div className="w-full bg-white dark:bg-gray-900 pt-16 px-8 pb-10 rounded-[40px] shadow-2xl relative animate-in fade-in duration-500">
               <button 
                 onClick={() => setAuthStep('form')}
-                className="p-2 -ml-2 text-gray-400 hover:text-gray-900 dark:hover:text-white transition active:scale-90 w-fit mb-2"
+                className="absolute top-6 left-6 p-2 text-gray-400 hover:text-gray-900 dark:hover:text-white transition active:scale-90 w-fit"
               >
                   <ArrowLeft size={28} />
               </button>
 
               <div className="flex flex-col items-center">
-                  <div className="w-14 h-14 bg-blue-50 dark:bg-blue-900/20 text-synergy-blue rounded-2xl flex items-center justify-center mb-4 shadow-sm">
+                  <div className="w-14 h-14 bg-blue-50 dark:bg-blue-900/20 text-synergy-blue rounded-2xl flex items-center justify-center mb-3 shadow-sm">
                       <Smartphone size={28} />
                   </div>
 
-                  <div className="text-center mb-8">
+                  <div className="text-center mb-6">
                       <h2 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight mb-1">Security Verification</h2>
                       <p className="text-[13px] text-gray-400 font-medium leading-relaxed max-w-[260px] mx-auto">
                           {isResetFlow 
@@ -148,7 +148,7 @@ export const Auth: React.FC = () => {
                   </div>
               </div>
 
-              <div className="w-full relative mb-8">
+              <div className="w-full relative mb-6">
                   <div className="flex justify-between gap-2">
                       {[...Array(6)].map((_, i) => (
                           <div 
@@ -191,9 +191,9 @@ export const Auth: React.FC = () => {
 
   return (
     <div className="w-full animate-in fade-in zoom-in duration-300">
-      <div className="bg-white dark:bg-gray-900 p-8 rounded-[40px] shadow-2xl relative z-10 border border-white/50 dark:border-gray-800 transition-all">
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-transparent mx-auto mb-4 flex items-center justify-center">
+      <div className="bg-white dark:bg-gray-900 pt-10 px-8 pb-20 rounded-[40px] shadow-2xl relative z-10 border border-white/50 dark:border-gray-800 transition-all">
+        <div className="text-center mb-4">
+          <div className="w-16 h-16 bg-transparent mx-auto mb-3 flex items-center justify-center">
             {systemSettings.logo ? (
                 <img src={systemSettings.logo || undefined} className="w-full h-full object-contain" alt="App Logo" />
             ) : (
@@ -204,9 +204,9 @@ export const Auth: React.FC = () => {
           <p className="text-gray-400 dark:text-gray-500 text-xs font-bold uppercase tracking-[0.2em] mt-1">Synergy Flow Network</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-2 mt-4">
+        <form onSubmit={handleSubmit} className="space-y-1 mt-1">
           {!isLogin && (
-            <div className="space-y-1 animate-in slide-in-from-top-2 duration-300">
+            <div className="space-y-0.5 animate-in slide-in-from-top-2 duration-300">
               <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Username</label>
               <div className="relative">
                 <User className="absolute left-4 top-3.5 text-gray-300" size={18} />
@@ -222,7 +222,7 @@ export const Auth: React.FC = () => {
             </div>
           )}
 
-          <div className="space-y-1">
+          <div className="space-y-0.5">
             <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">{t('auth.email_phone')}</label>
             <div className="relative">
               {emailOrPhone.match(/^[0-9]+$/) ? <Smartphone className="absolute left-4 top-3.5 text-gray-300" size={18} /> : <Mail className="absolute left-4 top-3.5 text-gray-300" size={18} />}
@@ -237,7 +237,7 @@ export const Auth: React.FC = () => {
             </div>
           </div>
           
-          <div className="space-y-1">
+          <div className="space-y-0.5">
             <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">{t('auth.pass')}</label>
             <div className="relative">
               <Lock className="absolute left-4 top-3.5 text-gray-300" size={18} />
@@ -260,7 +260,7 @@ export const Auth: React.FC = () => {
           </div>
 
           {!isLogin && (
-            <div className="space-y-1 animate-in slide-in-from-top-2 duration-300">
+            <div className="space-y-0.5 animate-in slide-in-from-top-2 duration-300">
               <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Confirm Password</label>
               <div className="relative">
                 <ShieldCheck className="absolute left-4 top-3.5 text-gray-300" size={18} />
@@ -306,8 +306,8 @@ export const Auth: React.FC = () => {
           </div>
         </form>
 
-        <div className="mt-6">
-          <div className="relative flex items-center justify-center mb-6">
+        <div className="mt-2">
+          <div className="relative flex items-center justify-center mb-4">
             <div className="flex-grow border-t border-gray-100 dark:border-gray-800"></div>
             <span className="flex-shrink mx-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Or continue with</span>
             <div className="flex-grow border-t border-gray-100 dark:border-gray-800"></div>
@@ -323,7 +323,7 @@ export const Auth: React.FC = () => {
           </button>
         </div>
 
-        <div className="mt-6 flex flex-col items-center justify-center space-y-4">
+        <div className="mt-2 flex flex-col items-center justify-center space-y-3">
             <div className="flex items-center space-x-2.5 group">
                 {!isLogin && (
                     <button 

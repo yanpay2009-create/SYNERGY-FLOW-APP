@@ -331,7 +331,7 @@ export const KYC: React.FC = () => {
   }
 
   return (
-    <div className="pb-24 pt-10 px-4 max-w-md mx-auto min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors overflow-hidden">
+    <div className="pb-24 pt-12 px-4 max-w-md mx-auto min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors overflow-hidden">
       <div className="flex items-center mb-6">
         <button 
             onClick={() => {

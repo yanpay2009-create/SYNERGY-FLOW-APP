@@ -207,7 +207,7 @@ export const Withdraw: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-950 font-sans pb-10 flex flex-col">
-            <div className="flex items-center px-4 pt-10 mb-2">
+            <div className="flex items-center px-4 pt-16 mb-2">
                 <button onClick={() => navigate('/commissions')} className="p-2 -ml-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition">
                   <ArrowLeft size={24} />
                 </button>
@@ -421,7 +421,7 @@ export const Withdraw: React.FC = () => {
 
   // --- RENDER 3: WITHDRAWAL FORM ---
   return (
-    <div className="pb-24 pt-0 px-4 max-w-md mx-auto min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300 relative font-sans">
+    <div className="pb-24 pt-12 px-4 max-w-md mx-auto min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300 relative font-sans">
       {isProcessing && (
           <div className="fixed inset-0 z-[120] bg-white/90 dark:bg-gray-950/90 backdrop-blur-md flex flex-col items-center justify-center">
               <Loader2 size={64} className="text-synergy-blue animate-spin" />
@@ -469,7 +469,7 @@ export const Withdraw: React.FC = () => {
           </div>
       )}
 
-      <div className="sticky top-0 z-[100] bg-gray-50/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-100/50 dark:border-gray-800/50 -mx-4 px-4 pt-10 pb-3 mb-6 transition-all">
+      <div className="sticky top-0 z-[100] bg-gray-50/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-100/50 dark:border-gray-800/50 -mx-4 px-4 pt-16 pb-3 mb-6 transition-all">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
             <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full transition">

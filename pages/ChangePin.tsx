@@ -73,7 +73,7 @@ export const ChangePin: React.FC = () => {
       className="bg-gray-50 flex flex-col items-center justify-center px-6 max-w-md mx-auto relative overflow-y-auto"
       style={{ minHeight: initialHeight ? `${initialHeight}px` : '100vh' }}
     >
-      <div className="absolute top-10 left-4">
+      <div className="absolute top-12 left-4">
         <button onClick={() => navigate(-1)} className="p-2 text-gray-600 hover:bg-gray-100 rounded-full transition">
           <ArrowLeft size={24} />
         </button>
