@@ -28,7 +28,7 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <div className={`sticky top-0 z-[100] ${transparent ? 'bg-transparent' : 'bg-gray-50/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-100/50 dark:border-gray-800/50'} -mx-4 px-4 pt-12 pb-3 mb-6 transition-all`}>
+    <div className={`sticky top-0 z-[100] ${transparent ? 'bg-transparent' : 'bg-gray-50/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-100/50 dark:border-gray-800/50'} -mx-4 px-4 pt-12 pb-1.5 mb-3 transition-all`}>
       <div className="flex items-center justify-between">
         <div className="flex items-center">
           {showBack && (

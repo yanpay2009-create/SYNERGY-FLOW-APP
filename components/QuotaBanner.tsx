@@ -8,7 +8,7 @@ export const QuotaBanner: React.FC = () => {
   if (!isQuotaExceeded) return null;
 
   return (
-    <div className="bg-amber-500 text-white px-4 py-2 flex flex-col sm:flex-row items-center justify-center gap-2 sticky top-0 z-[60] shadow-md animate-in fade-in slide-in-from-top duration-300">
+    <div className="bg-amber-500 text-white px-4 py-1.5 flex flex-col sm:flex-row items-center justify-center gap-2 sticky top-0 z-[60] shadow-md animate-in fade-in slide-in-from-top duration-300">
       <div className="flex items-center gap-2">
         <AlertCircle size={18} />
         <span className="text-sm font-medium">
