@@ -422,7 +422,7 @@ export const Account: React.FC = () => {
       <div className="relative z-10 bg-white dark:bg-gray-900 rounded-t-[40px] mt-32 pt-10 px-4 pb-16 shadow-[0_-15px_40px_rgba(0,0,0,0.08)] min-h-[calc(100vh-8rem)]">
           
           {/* Action Icons Area */}
-          <div className="absolute top-10 right-6 flex items-center space-x-2.5 z-30">
+          <div className="absolute top-4 right-6 flex items-center space-x-2.5 z-30">
               <button onClick={() => triggerPinGate('/withdraw')} className={`w-9 h-9 ${colors.bgLight} backdrop-blur-sm rounded-full flex items-center justify-center ${colors.text} shadow-sm border border-white dark:border-gray-700 active:scale-90 transition-all`}><Wallet size={18} /></button>
               <button onClick={() => navigate('/referrer-info')} className={`w-9 h-9 ${colors.bgLight} backdrop-blur-sm rounded-full flex items-center justify-center ${colors.text} shadow-sm border border-white dark:border-gray-700 active:scale-90 transition-all`}><UserCheck size={18} /></button>
               <button onClick={handleShareProfile} className={`w-9 h-9 ${colors.bgLight} backdrop-blur-sm rounded-full flex items-center justify-center ${colors.text} shadow-sm border border-white dark:border-gray-700 active:scale-90 transition-all`}><Share2 size={18} /></button>

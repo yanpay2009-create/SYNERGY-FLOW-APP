@@ -65,7 +65,7 @@ export const ChangePassword: React.FC = () => {
 
   return (
     <div 
-      className="pb-24 pt-4 px-4 max-w-md mx-auto bg-gray-50 overflow-y-auto"
+      className="pb-24 pt-10 px-4 max-w-md mx-auto bg-gray-50 overflow-y-auto"
       style={{ minHeight: initialHeight ? `${initialHeight}px` : '100vh' }}
     >
       <div className="flex items-center mb-6">

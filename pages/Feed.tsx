@@ -147,8 +147,8 @@ export const Feed: React.FC = () => {
     <div className="pb-0 pt-0 max-w-md mx-auto min-h-screen bg-gray-50 dark:bg-gray-950 relative transition-colors duration-300">
       
       {/* Top Header Bar (Always visible, centered tabs) */}
-      <div className="fixed top-10 left-0 right-0 z-[100] px-4 py-2.5 pointer-events-none">
-        <div className="max-w-md mx-auto flex items-center justify-center">
+      <div className="fixed top-4 left-0 right-0 z-[100] px-4 py-2.5 pointer-events-none">
+        <div className="max-w-md mx-auto flex items-center justify-end">
           <div className="flex space-x-1 p-1 rounded-full bg-gray-100/80 dark:bg-gray-800/80 backdrop-blur-md border border-gray-200 dark:border-gray-700 shadow-lg pointer-events-auto">
             <button 
                 onClick={() => setActiveTab('Trending')} 
