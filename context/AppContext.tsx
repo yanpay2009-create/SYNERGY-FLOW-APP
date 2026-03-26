@@ -968,45 +968,65 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } else {
       localStorage.removeItem('synergy_is_registering');
     }
-    try {
-      if (emailOrPhone && password) {
-        let email = emailOrPhone.trim().toLowerCase();
-        // Check if it's a phone number (simple check: doesn't contain @)
-        if (!email.includes('@')) {
-          const phone = emailOrPhone.trim().replace(/[-\s]/g, '');
-          try {
-            // Use phoneMap for unauthenticated lookup (standard way to avoid broad list permissions)
-            const phoneMapDoc = await getDoc(doc(db, 'phoneMap', phone));
-            if (phoneMapDoc.exists()) {
-              email = phoneMapDoc.data().email;
-            } else {
-              // No fallback to query/list as it will fail for unauthenticated users
-              showToast({ message: "Phone number not found. Please use email or register.", type: 'error' });
+    let retries = 0;
+    const maxRetries = 2;
+
+    const attemptLogin = async (): Promise<boolean> => {
+      try {
+        if (emailOrPhone && password) {
+          let email = emailOrPhone.trim().toLowerCase();
+          // Check if it's a phone number (simple check: doesn't contain @)
+          if (!email.includes('@')) {
+            const phone = emailOrPhone.trim().replace(/[-\s]/g, '');
+            try {
+              // Use phoneMap for unauthenticated lookup (standard way to avoid broad list permissions)
+              const phoneMapDoc = await getDoc(doc(db, 'phoneMap', phone));
+              if (phoneMapDoc.exists()) {
+                email = phoneMapDoc.data().email;
+              } else {
+                // No fallback to query/list as it will fail for unauthenticated users
+                showToast({ message: "Phone number not found. Please use email or register.", type: 'error' });
+                setIsLoggingIn(false);
+                return false;
+              }
+            } catch (err) {
+              console.error("Phone lookup failed:", err);
+              showToast({ message: "Login failed. Please check your network or use email.", type: 'error' });
               setIsLoggingIn(false);
               return false;
             }
-          } catch (err) {
-            console.error("Phone lookup failed:", err);
-            showToast({ message: "Login failed. Please check your network or use email.", type: 'error' });
-            setIsLoggingIn(false);
-            return false;
           }
+          await signInWithEmailAndPassword(auth, email, password);
+          return true;
+        } else {
+          const provider = new GoogleAuthProvider();
+          await signInWithPopup(auth, provider);
+          return true;
         }
-        await signInWithEmailAndPassword(auth, email, password);
-        return true;
-      } else {
-        const provider = new GoogleAuthProvider();
-        await signInWithPopup(auth, provider);
-        return true;
+      } catch (error: any) {
+        if (error.code === 'auth/network-request-failed' && retries < maxRetries) {
+          retries++;
+          console.warn(`Login failed due to network error. Retrying... (${retries}/${maxRetries})`);
+          await new Promise(resolve => setTimeout(resolve, 1000 * retries));
+          return attemptLogin();
+        }
+        throw error;
       }
+    };
+
+    try {
+      return await attemptLogin();
     } catch (error: any) {
       if (error.code === 'auth/popup-closed-by-user') {
         showToast({ message: "Login popup was closed. Please try again.", type: 'info' });
       } else if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
         showToast({ message: "Invalid email or password.", type: 'error' });
+      } else if (error.code === 'auth/network-request-failed') {
+        console.error("Network request failed during login. This may be due to a slow connection or an ad-blocker.", error);
+        showToast({ message: "Network error. Please check your connection or disable ad-blockers and try again.", type: 'error' });
       } else {
         console.error("Login failed", error);
-        showToast({ message: "Login failed. Please try again.", type: 'error' });
+        showToast({ message: `Login failed: ${error.message || "Please try again."}`, type: 'error' });
       }
       return false;
     } finally {
@@ -1018,43 +1038,63 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (isLoggingIn) return;
     setIsLoggingIn(true);
     localStorage.setItem('synergy_is_registering', 'true');
-    try {
-      let email = emailOrPhone.trim().toLowerCase();
-      let phone = "";
-      
-      if (!email.includes('@')) {
-        phone = emailOrPhone.trim().replace(/[-\s]/g, '');
-        email = `${phone}@synergy.com`; // Generate dummy email for Firebase Auth
-        localStorage.setItem('synergy_registering_phone', phone);
-      }
+    let retries = 0;
+    const maxRetries = 2;
 
-      // Check if email already exists in Firestore using emailMap (safer than query)
+    const attemptRegister = async (): Promise<void> => {
       try {
-        const emailMapDoc = await getDoc(doc(db, 'emailMap', email.toLowerCase()));
-        if (emailMapDoc.exists()) {
-          showToast({ message: "Email or phone already in use.", type: 'error' });
+        let email = emailOrPhone.trim().toLowerCase();
+        let phone = "";
+        
+        if (!email.includes('@')) {
+          phone = emailOrPhone.trim().replace(/[-\s]/g, '');
+          email = `${phone}@synergy.com`; // Generate dummy email for Firebase Auth
+          localStorage.setItem('synergy_registering_phone', phone);
+        }
+
+        // Check if email already exists in Firestore using emailMap (safer than query)
+        try {
+          const emailMapDoc = await getDoc(doc(db, 'emailMap', email.toLowerCase()));
+          if (emailMapDoc.exists()) {
+            showToast({ message: "Email or phone already in use.", type: 'error' });
+            setIsLoggingIn(false);
+            return;
+          }
+        } catch (err) {
+          // No fallback to query/list as it will fail for unauthenticated users
+          console.error("Email check failed:", err);
+          showToast({ message: "Registration check failed. Please try again.", type: 'error' });
           setIsLoggingIn(false);
           return;
         }
-      } catch (err) {
-        // No fallback to query/list as it will fail for unauthenticated users
-        console.error("Email check failed:", err);
-        showToast({ message: "Registration check failed. Please try again.", type: 'error' });
-        setIsLoggingIn(false);
-        return;
-      }
 
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      await updateProfile(userCredential.user, { displayName: username });
-      
-      // The onAuthStateChanged listener will handle the Firestore document creation
-      showToast({ message: "Registration successful!", type: 'success' });
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        await updateProfile(userCredential.user, { displayName: username });
+        
+        // The onAuthStateChanged listener will handle the Firestore document creation
+        showToast({ message: "Registration successful!", type: 'success' });
+      } catch (error: any) {
+        if (error.code === 'auth/network-request-failed' && retries < maxRetries) {
+          retries++;
+          console.warn(`Registration failed due to network error. Retrying... (${retries}/${maxRetries})`);
+          await new Promise(resolve => setTimeout(resolve, 1000 * retries));
+          return attemptRegister();
+        }
+        throw error;
+      }
+    };
+
+    try {
+      await attemptRegister();
     } catch (error: any) {
       console.error("Registration failed", error);
       if (error.code === 'auth/email-already-in-use') {
         showToast({ message: "Email or phone already in use.", type: 'error' });
+      } else if (error.code === 'auth/network-request-failed') {
+        console.error("Network request failed during registration. This may be due to a slow connection or an ad-blocker.", error);
+        showToast({ message: "Network error. Please check your connection or disable ad-blockers and try again.", type: 'error' });
       } else {
-        showToast({ message: "Registration failed. Please try again.", type: 'error' });
+        showToast({ message: `Registration failed: ${error.message || "Please try again."}`, type: 'error' });
       }
     } finally {
       setIsLoggingIn(false);

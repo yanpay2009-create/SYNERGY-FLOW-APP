@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { getAuth, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { initializeFirestore, doc, getDocFromServer, enableIndexedDbPersistence } from 'firebase/firestore';
 import { getDatabase } from 'firebase/database';
 // @ts-ignore
@@ -9,6 +9,13 @@ const config = firebaseConfig as any;
 // Initialize Firebase
 const app = initializeApp(config);
 export const auth = getAuth(app);
+
+// Set persistence to local for better reliability in sandboxed environments
+if (typeof window !== 'undefined') {
+  setPersistence(auth, browserLocalPersistence).catch((err) => {
+    console.warn("Auth persistence failed:", err);
+  });
+}
 
 // Initialize Firestore with settings for better reliability in sandboxed environments
 export const db = initializeFirestore(app, {
