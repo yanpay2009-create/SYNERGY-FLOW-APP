@@ -191,7 +191,7 @@ export const Auth: React.FC = () => {
 
   return (
     <div className="w-full animate-in fade-in zoom-in duration-300">
-      <div className="bg-white dark:bg-gray-900 pt-8 px-8 pb-6 rounded-[40px] shadow-2xl relative z-10 border border-white/50 dark:border-gray-800 transition-all">
+      <div className="bg-white dark:bg-gray-900 pt-8 px-8 pb-4 rounded-[40px] shadow-2xl relative z-10 border border-white/50 dark:border-gray-800 transition-all">
         <div className="text-center mb-2">
           <div className="w-16 h-16 bg-transparent mx-auto mb-3 flex items-center justify-center">
             {systemSettings.logo ? (
@@ -306,7 +306,7 @@ export const Auth: React.FC = () => {
           </div>
         </form>
 
-        <div className="mt-4">
+        <div className="mt-2">
           <div className="relative flex items-center justify-center mb-2">
             <div className="flex-grow border-t border-gray-100 dark:border-gray-800"></div>
             <span className="flex-shrink mx-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('auth.or_continue')}</span>
@@ -323,7 +323,7 @@ export const Auth: React.FC = () => {
           </button>
         </div>
 
-        <div className="mt-4 flex flex-col items-center justify-center space-y-2">
+        <div className="mt-2 flex flex-col items-center justify-center space-y-1.5">
             <div className="flex items-center space-x-2.5 group">
                 {!isLogin && (
                     <button 
