@@ -228,7 +228,7 @@ export const Account: React.FC = () => {
 
   if (!isLoggedIn || !user) {
     return (
-      <div className="min-h-screen bg-transparent flex flex-col items-center pt-7 pb-16 px-6 relative overflow-hidden">
+      <div className="min-h-screen bg-transparent flex flex-col items-center pt-10 pb-16 px-6 relative overflow-hidden">
         {/* Subtle background elements to give it depth without a solid color */}
         <div className="absolute inset-0 bg-gray-100/30 dark:bg-gray-900/30 backdrop-blur-[2px]"></div>
         <div className="w-full max-w-md relative z-10 animate-in fade-in zoom-in slide-in-from-bottom-12 duration-500">

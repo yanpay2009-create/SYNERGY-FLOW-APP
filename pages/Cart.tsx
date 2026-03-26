@@ -41,9 +41,9 @@ export const Cart: React.FC = () => {
     const success = applyCoupon(couponInput);
     if (success) {
         setCouponInput('');
-        showToast({ message: 'Coupon Applied!', type: 'success' });
+        showToast({ message: t('toast.coupon_applied'), type: 'success' });
     } else {
-        showToast({ message: 'Invalid Coupon Code', type: 'error' });
+        showToast({ message: t('toast.coupon_invalid'), type: 'error' });
     }
   };
 
@@ -71,7 +71,7 @@ export const Cart: React.FC = () => {
 
       if (paymentMethod === 'CreditCard') {
           if (!selectedPaymentCard) {
-              showToast({ message: "Please add and select a credit card first.", type: 'error' });
+              showToast({ message: t('toast.select_card'), type: 'error' });
               navigate('/payment-selection');
               return;
           }

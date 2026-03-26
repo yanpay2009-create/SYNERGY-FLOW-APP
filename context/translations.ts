@@ -199,4 +199,13 @@ export const dictionary: Record<string, { en: string; th: string; mm: string }> 
   'ref.link_btn': { en: 'Link Referrer', th: 'เชื่อมต่อผู้แนะนำ', mm: 'ညွှန်းဆိုသူနှင့် ချိတ်ဆက်ပါ' },
   'product.out_of_stock': { en: 'Out of Stock', th: 'สินค้าหมด', mm: 'ပစ္စည်းပြတ်နေသည်' },
   'menu.my_referrer': { en: 'My Referrer', th: 'ผู้แนะนำของฉัน', mm: 'ကျွန်ုပ်၏ ညွှန်းဆိုသူ' },
+
+  // Toast & Validation
+  'toast.pass_mismatch': { en: 'Passwords do not match.', th: 'รหัสผ่านไม่ตรงกัน', mm: 'စကားဝှက်များ မတူညီပါ။' },
+  'toast.pass_invalid': { en: 'Password must be at least 6 characters long and contain at least one English lowercase letter (a-z) and one number (0-9).', th: 'รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร และประกอบด้วยตัวพิมพ์เล็กภาษาอังกฤษ (a-z) และตัวเลข (0-9) อย่างน้อยหนึ่งตัว', mm: 'စကားဝှက်သည် အနည်းဆုံး စာလုံး ၆ လုံးရှိရမည်ဖြစ်ပြီး အင်္ဂလိပ်စာလုံးအသေး (a-z) နှင့် ဂဏန်း (0-9) အနည်းဆုံး တစ်ခုစီ ပါဝင်ရမည်။' },
+  'toast.agree_terms': { en: 'Please agree to the Terms & Conditions.', th: 'กรุณายอมรับข้อตกลงและเงื่อนไข', mm: 'စည်းကမ်းသတ်မှတ်ချက်များကို သဘောတူညီပေးပါ။' },
+  'toast.enter_email_phone': { en: 'Please enter your email or phone number first.', th: 'กรุณากรอกอีเมลหรือเบอร์โทรศัพท์ก่อน', mm: 'အီးမေးလ် သို့မဟုတ် ဖုန်းနံပါတ်ကို အရင်ထည့်ပါ။' },
+  'toast.select_card': { en: 'Please add and select a credit card first.', th: 'กรุณาเพิ่มและเลือกบัตรเครดิตก่อน', mm: 'ခရက်ဒစ်ကတ်ကို အရင်ထည့်သွင်းပြီး ရွေးချယ်ပါ။' },
+  'toast.coupon_applied': { en: 'Coupon Applied!', th: 'ใช้คูปองสำเร็จ!', mm: 'ကူပွန်အသုံးပြုပြီးပါပြီ။' },
+  'toast.coupon_invalid': { en: 'Invalid Coupon Code', th: 'รหัสคูปองไม่ถูกต้อง', mm: 'ကူပွန်ကုဒ် မမှန်ကန်ပါ။' },
 };

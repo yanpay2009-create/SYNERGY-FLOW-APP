@@ -232,8 +232,8 @@ export const Home: React.FC = () => {
       {/* Unified Sticky Header */}
       <div className={`fixed top-0 left-0 right-0 z-[100] max-w-md mx-auto transition-all duration-500 ease-in-out ${
         scrollingUp || scrolled || homeAds.length === 0
-          ? 'bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl pt-7 pb-1.5 px-4 shadow-sm'
-          : 'pt-7 pb-1.5 px-4 bg-transparent'
+          ? 'bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl pt-10 pb-1.5 px-4 shadow-sm'
+          : 'pt-10 pb-1.5 px-4 bg-transparent'
       }`}>
         <div className="flex items-center space-x-3">
           <div className={`flex-1 flex items-center px-4 py-2 rounded-2xl border transition-all duration-500 ease-in-out ${

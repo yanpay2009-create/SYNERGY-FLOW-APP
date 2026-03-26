@@ -177,6 +177,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const saved = localStorage.getItem('synergy_lang');
     return (saved as Language) || 'en';
   });
+
+  useEffect(() => {
+    document.documentElement.lang = language;
+    localStorage.setItem('synergy_lang', language);
+  }, [language]);
   
   const [fontSize, setFontSize] = useState<FontSize>(() => {
       const saved = localStorage.getItem('synergy_font_size');

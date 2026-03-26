@@ -46,15 +46,15 @@ export const Auth: React.FC = () => {
     } else {
         // Validation for Sign Up
         if (password !== confirmPassword) {
-            showToast({ message: "Passwords do not match.", type: "error" });
+            showToast({ message: t('toast.pass_mismatch'), type: "error" });
             return;
         }
         if (!validatePassword(password)) {
-            showToast({ message: "Password must be at least 6 characters long and contain at least one English lowercase letter (a-z) and one number (0-9).", type: "error" });
+            showToast({ message: t('toast.pass_invalid'), type: "error" });
             return;
         }
         if (!agreedToTerms) {
-            showToast({ message: "Please agree to the Terms & Conditions.", type: "error" });
+            showToast({ message: t('toast.agree_terms'), type: "error" });
             return;
         }
         setIsResetFlow(false);
@@ -64,7 +64,7 @@ export const Auth: React.FC = () => {
 
   const handleForgotPassword = () => {
       if (!emailOrPhone) {
-          showToast({ message: "Please enter your email or phone number first.", type: "error" });
+          showToast({ message: t('toast.enter_email_phone'), type: "error" });
           return;
       }
       setIsResetFlow(true);
@@ -125,7 +125,7 @@ export const Auth: React.FC = () => {
 
   if (authStep === 'otp') {
       return (
-          <div className="w-full bg-white dark:bg-gray-900 pt-16 px-8 pb-10 rounded-[40px] shadow-2xl relative animate-in fade-in duration-500">
+          <div className="w-full bg-white dark:bg-gray-900 pt-12 px-8 pb-8 rounded-[40px] shadow-2xl relative animate-in fade-in duration-500">
               <button 
                 onClick={() => setAuthStep('form')}
                 className="absolute top-6 left-6 p-2 text-gray-400 hover:text-gray-900 dark:hover:text-white transition active:scale-90 w-fit"
@@ -138,7 +138,7 @@ export const Auth: React.FC = () => {
                       <Smartphone size={28} />
                   </div>
 
-                  <div className="text-center mb-6">
+                  <div className="text-center mb-4">
                       <h2 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight mb-1">{t('auth.security_verification')}</h2>
                       <p className="text-[13px] text-gray-400 font-medium leading-relaxed max-w-[260px] mx-auto">
                           {isResetFlow 
@@ -148,7 +148,7 @@ export const Auth: React.FC = () => {
                   </div>
               </div>
 
-              <div className="w-full relative mb-6">
+              <div className="w-full relative mb-4">
                   <div className="flex justify-between gap-2">
                       {[...Array(6)].map((_, i) => (
                           <div 
@@ -191,8 +191,8 @@ export const Auth: React.FC = () => {
 
   return (
     <div className="w-full animate-in fade-in zoom-in duration-300">
-      <div className="bg-white dark:bg-gray-900 pt-10 px-8 pb-20 rounded-[40px] shadow-2xl relative z-10 border border-white/50 dark:border-gray-800 transition-all">
-        <div className="text-center mb-4">
+      <div className="bg-white dark:bg-gray-900 pt-8 px-8 pb-10 rounded-[40px] shadow-2xl relative z-10 border border-white/50 dark:border-gray-800 transition-all">
+        <div className="text-center mb-2">
           <div className="w-16 h-16 bg-transparent mx-auto mb-3 flex items-center justify-center">
             {systemSettings.logo ? (
                 <img src={systemSettings.logo || undefined} className="w-full h-full object-contain" alt="App Logo" />
@@ -306,8 +306,8 @@ export const Auth: React.FC = () => {
           </div>
         </form>
 
-        <div className="mt-2">
-          <div className="relative flex items-center justify-center mb-4">
+        <div className="mt-4">
+          <div className="relative flex items-center justify-center mb-2">
             <div className="flex-grow border-t border-gray-100 dark:border-gray-800"></div>
             <span className="flex-shrink mx-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('auth.or_continue')}</span>
             <div className="flex-grow border-t border-gray-100 dark:border-gray-800"></div>
@@ -323,7 +323,7 @@ export const Auth: React.FC = () => {
           </button>
         </div>
 
-        <div className="mt-2 flex flex-col items-center justify-center space-y-3">
+        <div className="mt-6 flex flex-col items-center justify-center space-y-3">
             <div className="flex items-center space-x-2.5 group">
                 {!isLogin && (
                     <button 
