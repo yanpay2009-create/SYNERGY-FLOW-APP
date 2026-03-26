@@ -705,7 +705,7 @@ export const CreateContent: React.FC = () => {
                     <button onClick={() => setShowContentList(false)} className="p-2 bg-gray-50 dark:bg-gray-800 rounded-full text-gray-500 hover:text-gray-700 transition active:scale-90"><X size={18} /></button>
                 </div>
 
-                <div className="flex space-x-2 overflow-x-auto no-scrollbar mb-1 px-6 bg-white dark:bg-gray-900 pb-1 pt-1 sticky top-0 z-10">
+                <div className="flex space-x-2 overflow-x-auto no-scrollbar mb-1 px-6 bg-white dark:bg-gray-900 pb-1 pt-0 sticky top-0 z-10">
                     {['All', 'Approved', 'Pending'].map((tab) => (
                         <button 
                             key={tab}

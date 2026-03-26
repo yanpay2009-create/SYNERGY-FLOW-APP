@@ -198,4 +198,5 @@ export const dictionary: Record<string, { en: string; th: string; mm: string }> 
   'ref.link_with': { en: 'Link with', th: 'เชื่อมต่อกับ', mm: 'နှင့် ချိတ်ဆက်ပါ' },
   'ref.link_btn': { en: 'Link Referrer', th: 'เชื่อมต่อผู้แนะนำ', mm: 'ညွှန်းဆိုသူနှင့် ချိတ်ဆက်ပါ' },
   'product.out_of_stock': { en: 'Out of Stock', th: 'สินค้าหมด', mm: 'ပစ္စည်းပြတ်နေသည်' },
+  'menu.my_referrer': { en: 'My Referrer', th: 'ผู้แนะนำของฉัน', mm: 'ကျွန်ုပ်၏ ညွှန်းဆိုသူ' },
 };

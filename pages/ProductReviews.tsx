@@ -24,7 +24,7 @@ export const ProductReviews: React.FC = () => {
     : "0.0";
 
   return (
-    <div className="pb-24 pt-12 px-4 max-w-md mx-auto min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+    <div className="pb-24 pt-0 px-4 max-w-md mx-auto min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
       <Header 
         title="Reviews" 
         onBack={() => navigate(-1)}

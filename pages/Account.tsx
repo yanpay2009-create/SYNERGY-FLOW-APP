@@ -228,7 +228,7 @@ export const Account: React.FC = () => {
 
   if (!isLoggedIn || !user) {
     return (
-      <div className="min-h-screen bg-transparent flex flex-col items-center pt-12 pb-16 px-6 relative overflow-hidden">
+      <div className="min-h-screen bg-transparent flex flex-col items-center pt-7 pb-16 px-6 relative overflow-hidden">
         {/* Subtle background elements to give it depth without a solid color */}
         <div className="absolute inset-0 bg-gray-100/30 dark:bg-gray-900/30 backdrop-blur-[2px]"></div>
         <div className="w-full max-w-md relative z-10 animate-in fade-in zoom-in slide-in-from-bottom-12 duration-500">
@@ -371,7 +371,7 @@ export const Account: React.FC = () => {
       <div className={`absolute top-0 left-0 right-0 h-48 bg-gradient-to-br ${colors.gradient} border-b-4 ${colors.border} z-0 shadow-lg`}>
           <div className="absolute top-[-20px] left-[-20px] w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
           <div className="absolute bottom-[-10px] right-[-10px] w-32 h-32 bg-black/5 rounded-full blur-2xl"></div>
-          <div className="absolute top-8 right-6 z-20">
+          <div className="absolute top-7 right-6 z-20">
               <div className="bg-white/20 backdrop-blur-md border border-white/30 rounded-full px-4 py-1.5 flex items-center shadow-lg animate-in fade-in slide-in-from-right-4 duration-700">
                   <span className="text-[10px] font-black text-white tracking-widest uppercase italic">
                       {user.tier} {t('account.affiliate')}
@@ -383,7 +383,7 @@ export const Account: React.FC = () => {
       {/* PIN Security Gate Overlay */}
       {isVerifyingPin && (
           <div className="fixed inset-0 z-[100] bg-white dark:bg-gray-900 flex flex-col items-center justify-center px-6 transition-all duration-300 animate-in fade-in">
-              <button onClick={() => setIsVerifyingPin(false)} className="absolute top-6 right-6 p-2 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-400"><X size={20} /></button>
+              <button onClick={() => setIsVerifyingPin(false)} className="absolute top-3 right-6 p-2 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-400"><X size={20} /></button>
               <div className={`w-20 h-20 rounded-full flex items-center justify-center shadow-xl mb-8 transition-all duration-500 ${showSuccess ? 'bg-emerald-50 text-white scale-110' : 'bg-gray-50 dark:bg-gray-800 text-synergy-blue border border-gray-100 dark:border-gray-700'}`}>
                 {showSuccess ? <CheckCircle2 size={40} className="animate-in zoom-in" /> : (pinFlow === 'recovery' ? <Smartphone size={32} className="text-amber-500" /> : (pinFlow === 'verify' ? <Lock size={32} /> : <Sparkles size={32} className="animate-pulse" />))}
               </div>
